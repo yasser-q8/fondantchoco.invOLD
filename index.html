@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FONDANT CHOCO - نظام الفواتير</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #eef2f5; font-family: 'Segoe UI', Arial, sans-serif; padding: 15px; display: flex; justify-content: center; color: #111; flex-direction: column; align-items: center; }
+        .invoice-system { max-width: 950px; width: 100%; }
+
+        /* إزالة أسهم الأرقام (Spinners) من حقول الإدخال */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* شريط التنبيه بالنسخة الاحتياطية */
+        #backupReminderBanner {
+            width: 100%; max-width: 950px; background: #ff9800; color: #fff; padding: 10px 15px;
+            border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 10px;
+            display: none; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        /* الأزرار العلوية المثبتة Sticky */
+        .top-bar { 
+            position: sticky; top: 10px; z-index: 9999; 
+            background: rgba(238, 242, 245, 0.95); padding: 12px 15px; 
+            border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            display: flex; justify-content: space-between; gap: 6px; margin-bottom: 15px; flex-wrap: wrap;
+        }
+        .btn { padding: 9px 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-primary { background: #28a745; color: white; }
+        .btn-primary:hover { background: #218838; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-info:hover { background: #138496; }
+        .btn-warning { background: #ffc107; color: #222; }
+        .btn-warning:hover { background: #e0a800; }
+        .btn-success-dark { background: #20c997; color: white; }
+        .btn-success-dark:hover { background: #17a589; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+        
+        /* الورقة الخارجية للفاتورة مع هامش 1.0 سم */
+        .invoice-paper { 
+            background: white; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+            padding: 1.0cm; margin: auto; display: flex; flex-direction: column; min-height: 297mm;
+            position: relative; border: 1px solid #dcdcdc; width: 100%;
+        }
+        .invoice-content { flex: 1; }
+
+        /* رأس الفاتورة */
+        .header-top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
+        .header-right-side { text-align: right; font-size: 13px; font-weight: bold; color: #111; line-height: 1.5; }
+        .header-left-side { text-align: left; font-size: 19.5px; font-weight: bold; color: #111; line-height: 1.5; }
+        .header-center-logo { text-align: center; }
+        .logo-img { height: 65px; width: auto; object-fit: contain; }
+        .brand-name { font-size: 24px; font-weight: 900; letter-spacing: 1.5px; color: #000; margin-top: 3px; font-family: Arial, sans-serif; }
+
+        .invoice-no-row { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px; }
+        
+        /* تنسيق رقم الفاتورة No. ثم الرقم */
+        .inv-no-badge { font-size: 20.7px; font-weight: bold; color: #d32f2f; display: flex; align-items: center; gap: 6px; }
+        #invoiceNumberInput {
+            border: none;
+            border-bottom: 1.5px dotted #d32f2f;
+            font-size: 20px;
+            font-weight: bold;
+            color: #d32f2f;
+            text-align: center;
+            width: 110px;
+            background: transparent;
+            outline: none;
+            font-family: Arial, sans-serif;
+        }
+        #invoiceNumberInput:focus { border-bottom-style: solid; }
+
+        /* حقول العميل والعنوان */
+        .fields-container { display: flex; flex-direction: column; gap: 14px; margin-bottom: 15px; }
+        .field-line { display: flex; align-items: center; gap: 6px; width: 100%; }
+        .field-label { font-weight: bold; font-size: 14px; color: #222; white-space: nowrap; line-height: 1.5; }
+        
+        .dotted-input { 
+            border: none; border-bottom: 1.5px dotted #444; 
+            font-size: 14.5px; 
+            padding: 5px 6px; font-weight: bold; 
+            color: #000; outline: none; background: transparent;
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            text-align: center;
+        }
+        .dotted-input:focus { border-bottom-style: solid; border-color: #000; }
+
+        #customerInput {
+            font-size: 1.15em !important; 
+            font-weight: 900 !important;
+            color: #000;
+            text-transform: capitalize;
+            text-align: center !important;
+        }
+
+        /* سطر العنوان مع ضبط المنطقة 4.0 سم */
+        .address-grid {
+            display: grid;
+            grid-template-columns: auto 4.0cm auto 50px auto 160px auto 50px auto 45px;
+            gap: 6px;
+            align-items: center;
+        }
+        .address-grid .field-label {
+            font-size: 12.5px;
+            line-height: 1.5;
+        }
+        .address-grid .dotted-input {
+            font-size: 13.5px;
+            padding: 4px 4px;
+            line-height: 1.5;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        #areaInput {
+            font-size: 14.95px !important; 
+            text-align: right !important;
+        }
+
+        .autocomplete-wrapper { position: relative; flex: 1; width: 100%; }
+        .autocomplete-list { position: absolute; top: 100%; right: 0; left: 0; background: white; border: 1px solid #888; max-height: 180px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.15); display: none; text-align: right; }
+        .autocomplete-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 13px; }
+        .autocomplete-item:hover { background: #f0f0f0; font-weight: bold; }
+
+        /* جدول الأصناف - تم تصغير عرض أعمدة Unit و Qty و Total إلى 2.75 سم لكل منها */
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; direction: ltr; table-layout: fixed; }
+        .items-table th { 
+            border: 1.2px solid #000; padding: 11px 6px; background: #ffffff; 
+            font-weight: bold; font-size: 13px; text-align: center; color: #000;
+        }
+        .items-table td { 
+            border: 1.2px solid #000; padding: 6px 6px; 
+            text-align: center; vertical-align: middle; 
+            line-height: 1.6;
+        }
+        .items-table td input { 
+            width: 100%; height: 100%;
+            border: none; outline: none; background: transparent; 
+            font-size: 15px; font-weight: bold; text-align: center; color: #000;
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+            padding: 6px;
+        }
+        .items-table td.prod-cell input { text-align: left; text-transform: capitalize; }
+
+        .row-total {
+            font-size: 17px !important;
+            font-weight: 900 !important;
+            color: #000;
+            text-align: right !important;
+            padding-right: 8px;
+        }
+
+        .add-row-btn { background: #17a2b8; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 15px; font-size: 13px; }
+
+        /* الإجمالي الكلي على اليمين */
+        .totals-section { display: flex; justify-content: flex-start; margin-top: 10px; margin-bottom: 25px; direction: rtl; }
+        .total-box { 
+            border: 2px solid #000; padding: 10px 22px; border-radius: 6px; 
+            font-weight: bold; font-size: 16px; display: flex; gap: 15px; align-items: center; background: #fff;
+        }
+        .total-val { color: #d32f2f; font-size: 20px; font-weight: 900; text-align: right; }
+
+        /* التوقيعات */
+        .signatures-section { display: flex; justify-content: space-between; width: 100%; margin-top: 1.0cm; font-size: 15px; font-weight: bold; padding: 0 10px; direction: rtl; }
+        .sig-line { border-bottom: 1.5px dotted #333; width: 220px; display: inline-block; margin-right: 8px; }
+
+        /* المودال */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: white; width: 95%; max-width: 900px; max-height: 85vh; border-radius: 8px; padding: 25px; overflow-y: auto; text-align: right; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-bottom: 15px; }
+        .saved-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .saved-table th, .saved-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        .saved-table th { background: #f8f9fa; }
+
+        .pdf-mode { padding: 1.0cm !important; box-shadow: none !important; border: 1px solid #000 !important; }
+        .pdf-mode .no-print { display: none !important; }
+        .pdf-mode .dotted-input { border-bottom: 1.5px dotted #000 !important; }
+    </style>
+</head>
+<body>
+
+<div id="backupReminderBanner">
+    <span>⚠️ تنبيه: لم تقم بأخذ نسخة احتياطية لبيانات النظام منذ أكثر من ساعتين. يرجى أخذ نسخة احتياطية الآن لحفظ البيانات.</span>
+    <button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="exportBackup()">أخذ نسخة الآن</button>
+</div>
+
+<div class="invoice-system">
+    <div class="top-bar no-print">
+        <button class="btn btn-primary" id="saveAndExportBtn">💾 حفظ وتصدير PDF وتالي</button>
+        <button class="btn btn-success-dark" id="exportBackupBtn">💾 تصدير نسخة احتياطية</button>
+        <button class="btn btn-warning" onclick="document.getElementById('backupFileInput').click()">📂 استعادة نسخة احتياطية</button>
+        <input type="file" id="backupFileInput" style="display: none;" accept=".json" onchange="importBackup(event)">
+        <button class="btn btn-info" id="viewInvoicesBtn">📂 الفواتير المحفوظة</button>
+        <button class="btn btn-secondary" id="viewLogsBtn">📜 سجل الحركات</button>
+        <button class="btn btn-danger" id="clearInvoiceBtn">🗑️ إعادة تحميل الكل</button>
+    </div>
+
+    <div class="invoice-paper" id="invoiceContainer">
+        <div class="invoice-content">
+            
+            <!-- الهيدر مع أيقونة إنستجرام -->
+            <div class="header-top-row">
+                <div class="header-right-side">
+                    فرع صباح الأحمد 6010 9932 📞💬<br>
+                    فرع أسواق القرين 6070 9931 📞💬<br>
+                    fondant.q8 <img src="https://i.postimg.cc/BbbNyRM8/Instagram-app-logo.jpg" alt="Instagram" style="width: 28px; height: 28px; vertical-align: middle; border-radius: 4px;"><br>
+                    www.fondant-kw.com
+                </div>
+                <div class="header-center-logo">
+                    <img src="https://i.postimg.cc/YC3c8kLw/logo-3.png" alt="Logo" class="logo-img" onerror="this.src='https://placehold.co/80x80?text=FONDANT'">
+                    <div class="brand-name">FONDANT CHOCO</div>
+                </div>
+                <div class="header-left-side">
+                    فاتورة نقداً / بالحساب<br>
+                    Cash/Credit Invoice
+                </div>
+            </div>
+
+            <!-- رقم الفاتورة (No. ثم الرقم) -->
+            <div class="invoice-no-row">
+                <div class="inv-no-badge" dir="ltr">
+                    <span>No.</span>
+                    <input type="number" id="invoiceNumberInput" value="4367">
+                </div>
+            </div>
+
+            <!-- بيانات العميل والعنوان -->
+            <div class="fields-container">
+                <div class="field-line">
+                    <span class="field-label">Mr./Mrs. :السيد / ة</span>
+                    <div class="autocomplete-wrapper" style="flex: 2;">
+                        <input type="text" id="customerInput" class="dotted-input" placeholder="اختر/اكتب العميل...">
+                        <div id="customerList" class="autocomplete-list"></div>
+                    </div>
+
+                    <span class="field-label" style="margin-right: 15px;">تليفون / Tel:</span>
+                    <input type="text" id="customerPhone" class="dotted-input" style="width: 140px; text-align: center;">
+
+                    <span class="field-label" style="margin-right: auto;">:تاريخ الطلب</span>
+                    <input type="date" id="invoiceDate" class="dotted-input" style="width: 135px; text-align: center;">
+                </div>
+
+                <!-- سطر العنوان -->
+                <div class="field-line address-grid">
+                    <span class="field-label">المنطقة / Area:</span>
+                    <input type="text" id="areaInput" class="dotted-input" style="text-align: right;">
+
+                    <span class="field-label">قطعة / Block:</span>
+                    <input type="text" id="blockInput" class="dotted-input">
+
+                    <span class="field-label">شارع / Street:</span>
+                    <input type="text" id="streetInput" class="dotted-input">
+
+                    <span class="field-label">جادة / Jeda:</span>
+                    <input type="text" id="jedaInput" class="dotted-input">
+
+                    <span class="field-label">منزل / Home:</span>
+                    <input type="text" id="homeInput" class="dotted-input">
+                </div>
+            </div>
+
+            <!-- جدول الأصناف (عرض الأعمدة Unit و Qty و Total = 2.75 سم لكل عمود) -->
+            <table class="items-table" id="itemsTable">
+                <thead>
+                    <tr>
+                        <th style="width: auto;">Description التفاصيل</th>
+                        <th style="width: 2.75cm;">Unit سعر الوحدة</th>
+                        <th style="width: 2.75cm;">Qty الكمية</th>
+                        <th style="width: 2.75cm;">Total المبلغ<br><small>(دينار | فلس)</small></th>
+                        <th class="no-print" style="width: 5%;"></th>
+                    </tr>
+                </thead>
+                <tbody id="invoiceRows"></tbody>
+            </table>
+
+            <button type="button" class="add-row-btn no-print" id="addItemBtn">+ إضافة صنف إضافي</button>
+
+            <!-- الإجمالي الكلي على اليمين -->
+            <div class="totals-section">
+                <div class="total-box">
+                    <span>Total Amount الإجمالي الكلي:</span>
+                    <span class="total-val" id="grandTotalVal">KD 0.000</span>
+                </div>
+            </div>
+
+            <!-- التوقيعات -->
+            <div class="signatures-section">
+                <div>
+                    اسم السائق المستلم:<br>
+                    <span style="font-size: 11px; font-weight: normal; color: #444;">Driver Name:</span>
+                    <span class="sig-line"></span>
+                </div>
+                <div>
+                    توقيع العميل:<br>
+                    <span style="font-size: 11px; font-weight: normal; color: #444;">Customer Signature:</span>
+                    <span class="sig-line"></span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal الفواتير المحفوظة -->
+<div class="modal-overlay" id="savedInvoicesModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>الفواتير المحفوظة</h3>
+            <button class="btn btn-danger" onclick="closeModal('savedInvoicesModal')">إغلاق ✖</button>
+        </div>
+        <table class="saved-table">
+            <thead>
+                <tr>
+                    <th>رقم الفاتورة</th>
+                    <th>التاريخ</th>
+                    <th>العميل</th>
+                    <th>الإجمالي</th>
+                    <th>إجراء</th>
+                </tr>
+            </thead>
+            <tbody id="savedInvoicesList"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal سجل الحركات -->
+<div class="modal-overlay" id="logsModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>سجل الحركات</h3>
+            <button class="btn btn-danger" onclick="closeModal('logsModal')">إغلاق ✖</button>
+        </div>
+        <table class="saved-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>الوقت والتاريخ (بالإنجليزية)</th>
+                    <th>تفاصيل الحركة</th>
+                </tr>
+            </thead>
+            <tbody id="logsList"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function getExpectedNextInvoiceNumber() {
+        let savedInvoices = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+        if (savedInvoices.length > 0) {
+            const maxNum = Math.max(...savedInvoices.map(inv => parseInt(inv.number) || 0));
+            return maxNum + 1;
+        }
+        return parseInt(localStorage.getItem('fondant_last_inv_num') || "4367");
+    }
+
+    let currentInvoiceNum = getExpectedNextInvoiceNumber();
+    const invoiceNumberInput = document.getElementById('invoiceNumberInput');
+    invoiceNumberInput.value = currentInvoiceNum;
+
+    invoiceNumberInput.addEventListener('input', function() {
+        if (this.value) {
+            currentInvoiceNum = parseInt(this.value) || currentInvoiceNum;
+        }
+    });
+
+    // نظام التحقق من النسخة الاحتياطية كل ساعتين
+    function checkBackupReminder() {
+        const lastBackup = localStorage.getItem('fondant_last_backup_time');
+        const twoHours = 2 * 60 * 60 * 1000;
+        if (!lastBackup || (Date.now() - parseInt(lastBackup)) > twoHours) {
+            document.getElementById('backupReminderBanner').style.display = 'flex';
+        } else {
+            document.getElementById('backupReminderBanner').style.display = 'none';
+        }
+    }
+
+    // تصدير نسخة احتياطية
+    function exportBackup() {
+        const backupData = {
+            last_inv_num: currentInvoiceNum,
+            saved_invoices: localStorage.getItem('fondant_saved_invoices'),
+            logs: localStorage.getItem('fondant_logs'),
+            backup_time: Date.now()
+        };
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Fondant_Backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        localStorage.setItem('fondant_last_backup_time', Date.now());
+        checkBackupReminder();
+        addLogEntry("تم تصدير نسخة احتياطية لبيانات النظام بنجاح.", false);
+        alert("تم تحميل النسخة الاحتياطية بنجاح!");
+    }
+
+    document.getElementById('exportBackupBtn').addEventListener('click', exportBackup);
+
+    // استعادة نسخة احتياطية
+    function importBackup(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.last_inv_num) localStorage.setItem('fondant_last_inv_num', data.last_inv_num);
+                if (data.saved_invoices) localStorage.setItem('fondant_saved_invoices', data.saved_invoices);
+                if (data.logs) localStorage.setItem('fondant_logs', data.logs);
+                localStorage.setItem('fondant_last_backup_time', Date.now());
+                alert("تم استعادة النسخة الاحتياطية بنجاح! سيتم تحديث الصفحة الآن.");
+                location.reload();
+            } catch (err) {
+                alert("ملف النسخة الاحتياطية غير صالح أو تالف.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function toCapitalTitleCase(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/(?:^|\s|-)\w/g, function(match) {
+            return match.toUpperCase();
+        });
+    }
+
+    const rawItemsDB = [
+        { name: "SWEET GRAHAM", price: 0.600 },
+        { name: "HALLOM CROLL SANDWITCH", price: 0.500 },
+        { name: "TURKEY CROLL SANDWITCH", price: 0.500 },
+        { name: "CHICKEN CROLL SANDWICH", price: 0.500 },
+        { name: "MIX FRIE SANDWICH", price: 0.500 },
+        { name: "MOHALABIYA", price: 0.500 },
+        { name: "FETA SANDWITCH", price: 0.500 },
+        { name: "HALLOM BROUN SANDWICH", price: 0.500 },
+        { name: "TURKISH BROWN SANDWICH WITH SESAME", price: 0.500 },
+        { name: "BROWN CHICKEN SANDWICH WITH SESAME", price: 0.500 },
+        { name: "HALLOM SANDWICH", price: 0.500 },
+        { name: "TURKEY SANDWITCH", price: 0.500 },
+        { name: "CHICKEN SANDWICH", price: 0.500 },
+        { name: "CHICKEN SAJ", price: 0.500 },
+        { name: "HALLOM SAJ", price: 0.500 },
+        { name: "GRAPE LEVES LIMON", price: 0.450 },
+        { name: "GRAPE LEVES ROMAN", price: 0.480 }
+    ];
+
+    const itemsDB = rawItemsDB.map(i => ({
+        name: toCapitalTitleCase(i.name),
+        price: i.price
+    }));
+
+    const rawCustomersDB = [
+        "ADAN", "JAHRA", "AL RAZI", "HYA", "HICHAM", "AHMAD", "NBK", 
+        "PHSYALOGY", "HIE UNIVERSITY", "HEALTH SCIENCE", "TECHNOLOGH GIRLS", 
+        "NEW RAZI", "EDMAN", "M OF HEALTH", "AL OMOMA"
+    ];
+
+    const customersDB = rawCustomersDB.map(c => toCapitalTitleCase(c));
+
+    const invoiceDateInput = document.getElementById('invoiceDate');
+    const customerInput = document.getElementById('customerInput');
+    const customerList = document.getElementById('customerList');
+    const invoiceRows = document.getElementById('invoiceRows');
+
+    const today = new Date().toISOString().split('T')[0];
+    invoiceDateInput.value = today;
+
+    customerInput.addEventListener('input', function() {
+        this.value = toCapitalTitleCase(this.value);
+        const val = this.value.toLowerCase();
+        customerList.innerHTML = '';
+        if(!val) { customerList.style.display = 'none'; return; }
+        const matches = customersDB.filter(c => c.toLowerCase().includes(val));
+        if(matches.length) {
+            matches.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.innerText = m;
+                div.onclick = () => {
+                    customerInput.value = m;
+                    customerList.style.display = 'none';
+                };
+                customerList.appendChild(div);
+            });
+            customerList.style.display = 'block';
+        } else { customerList.style.display = 'none'; }
+    });
+
+    function createRowElement(itemData = null) {
+        const rowId = Date.now() + Math.random().toString().substr(2, 4);
+        const tr = document.createElement('tr');
+        tr.id = `row-${rowId}`;
+        
+        const prodName = itemData ? toCapitalTitleCase(itemData.name) : '';
+        const prodPrice = itemData ? parseFloat(itemData.price).toFixed(3) : '0.000';
+        const prodQty = itemData && itemData.qty !== undefined ? itemData.qty : '';
+        const prodTotal = (itemData && prodQty !== '') ? (parseFloat(itemData.price) * parseFloat(prodQty)).toFixed(3) : '0.000';
+
+        tr.innerHTML = `
+            <td class="prod-cell autocomplete-wrapper">
+                <input type="text" class="prod-input" value="${prodName}" placeholder="ابحث عن الصنف...">
+                <div class="autocomplete-list prod-list"></div>
+            </td>
+            <td style="width: 2.75cm;"><input type="number" class="price-input" value="${prodPrice}" step="0.001"></td>
+            <td style="width: 2.75cm;"><input type="number" class="qty-input" value="${prodQty}" min="1" placeholder=""></td>
+            <td class="row-total" style="width: 2.75cm;">${prodTotal}</td>
+            <td class="no-print">
+                <button class="btn-danger" style="padding:4px 8px; border-radius:3px; font-size:12px;" onclick="document.getElementById('row-${rowId}').remove(); updateGrandTotal();">✖</button>
+            </td>
+        `;
+
+        invoiceRows.appendChild(tr);
+
+        const prodInput = tr.querySelector('.prod-input');
+        const prodList = tr.querySelector('.prod-list');
+        const priceInput = tr.querySelector('.price-input');
+        const qtyInput = tr.querySelector('.qty-input');
+
+        prodInput.addEventListener('input', function() {
+            this.value = toCapitalTitleCase(this.value);
+            const val = this.value.toLowerCase();
+            prodList.innerHTML = '';
+            if(!val) { prodList.style.display = 'none'; return; }
+            const matches = itemsDB.filter(i => i.name.toLowerCase().includes(val));
+            if(matches.length) {
+                matches.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerText = `${item.name} - (${item.price.toFixed(3)} KD)`;
+                    div.onclick = () => {
+                        prodInput.value = item.name;
+                        priceInput.value = item.price.toFixed(3);
+                        prodList.style.display = 'none';
+                        calculateRowTotal(tr);
+                    };
+                    prodList.appendChild(div);
+                });
+                prodList.style.display = 'block';
+            } else { prodList.style.display = 'none'; }
+        });
+
+        priceInput.addEventListener('input', () => calculateRowTotal(tr));
+        qtyInput.addEventListener('input', () => calculateRowTotal(tr));
+
+        // التنقل بالأسهم لأعلى وأسفل في عمود الكمية
+        qtyInput.addEventListener('keydown', function(e) {
+            const rows = Array.from(document.querySelectorAll('#invoiceRows tr'));
+            const currentIndex = rows.indexOf(tr);
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (currentIndex < rows.length - 1) {
+                    rows[currentIndex + 1].querySelector('.qty-input').focus();
+                } else {
+                    createRowElement();
+                    const newRows = Array.from(document.querySelectorAll('#invoiceRows tr'));
+                    newRows[newRows.length - 1].querySelector('.qty-input').focus();
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (currentIndex > 0) {
+                    rows[currentIndex - 1].querySelector('.qty-input').focus();
+                }
+            }
+        });
+
+        calculateRowTotal(tr);
+    }
+
+    function calculateRowTotal(row) {
+        const price = parseFloat(row.querySelector('.price-input').value) || 0;
+        const qtyStr = row.querySelector('.qty-input').value.trim();
+        const qty = qtyStr === '' ? 0 : (parseFloat(qtyStr) || 0);
+        const total = price * qty;
+        row.querySelector('.row-total').innerText = total.toFixed(3);
+        updateGrandTotal();
+    }
+
+    function updateGrandTotal() {
+        let grand = 0;
+        document.querySelectorAll('.row-total').forEach(el => grand += parseFloat(el.innerText) || 0);
+        document.getElementById('grandTotalVal').innerText = 'KD ' + grand.toFixed(3);
+    }
+
+    function populateAllDefaultItems() {
+        invoiceRows.innerHTML = '';
+        itemsDB.forEach(item => {
+            createRowElement({
+                name: item.name,
+                price: item.price,
+                qty: ''
+            });
+        });
+        updateGrandTotal();
+    }
+
+    document.getElementById('addItemBtn').addEventListener('click', () => createRowElement());
+
+    // السجل حتى 500 حركة مع دعم تلوين تغيير التسلسل بالأحمر
+    function addLogEntry(actionDetails, isHtml = false) {
+        let logs = JSON.parse(localStorage.getItem('fondant_logs') || '[]');
+        const timeStamp = new Date().toLocaleString('en-GB', { hour12: false });
+        logs.unshift({ id: logs.length + 1, time: timeStamp, text: actionDetails, html: isHtml });
+        if(logs.length > 500) logs = logs.slice(0, 500);
+        localStorage.setItem('fondant_logs', JSON.stringify(logs));
+    }
+
+    document.getElementById('viewLogsBtn').addEventListener('click', () => {
+        const tbody = document.getElementById('logsList');
+        const logs = JSON.parse(localStorage.getItem('fondant_logs') || '[]');
+        tbody.innerHTML = '';
+        if(!logs.length) tbody.innerHTML = '<tr><td colspan="3">لا توجد حركات مسجلة.</td></tr>';
+        else {
+            logs.forEach((l, idx) => {
+                const row = tbody.insertRow();
+                row.insertCell(0).innerText = idx + 1;
+                row.insertCell(1).innerText = l.time;
+                const textCell = row.insertCell(2);
+                if (l.html) {
+                    textCell.innerHTML = l.text;
+                } else {
+                    textCell.innerText = l.text;
+                }
+            });
+        }
+        document.getElementById('logsModal').style.display = 'flex';
+    });
+
+    document.getElementById('saveAndExportBtn').addEventListener('click', async function() {
+        if(!customerInput.value.trim()) { alert("يرجى إدخال اسم العميل أولاً."); return; }
+
+        let hasValidQty = false;
+        document.querySelectorAll('#invoiceRows tr').forEach(tr => {
+            const qtyVal = tr.querySelector('.qty-input').value.trim();
+            if (qtyVal !== '' && parseFloat(qtyVal) > 0) {
+                hasValidQty = true;
+            }
+        });
+
+        if (!hasValidQty) {
+            alert("لا يمكن حفظ وتصدير الفاتورة إلا بعد إدخال كمية لصنف واحد على الأقل.");
+            return;
+        }
+
+        const invNum = currentInvoiceNum;
+        const custName = customerInput.value.trim();
+        const grandTotal = document.getElementById('grandTotalVal').innerText;
+
+        // التحقق مما إذا تم تغيير تسلسل الفاتورة يدوياً
+        const expectedNext = getExpectedNextInvoiceNumber();
+        const isSequenceChanged = parseInt(invNum) !== expectedNext;
+
+        let logText = `تم حفظ وتصدير فاتورة رقم [ ${invNum} ] للعميل ( ${custName} ) بقيمة ${grandTotal}`;
+        if (isSequenceChanged) {
+            logText = `<span style="color: red; font-weight: bold;">⚠️ تم تغيير تسلسل الفاتورة يدوياً إلى [ ${invNum} ] - وتم حفظ وتصدير الفاتورة للعميل ( ${custName} ) بقيمة ${grandTotal}</span>`;
+        }
+
+        let items = [];
+        document.querySelectorAll('#invoiceRows tr').forEach(tr => {
+            items.push({
+                name: tr.querySelector('.prod-input').value,
+                price: tr.querySelector('.price-input').value,
+                qty: tr.querySelector('.qty-input').value,
+                total: tr.querySelector('.row-total').innerText
+            });
+        });
+
+        let savedInvoices = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+        savedInvoices.push({
+            number: invNum,
+            date: invoiceDateInput.value,
+            customer: custName,
+            phone: document.getElementById('customerPhone').value,
+            total: grandTotal,
+            items: items
+        });
+        localStorage.setItem('fondant_saved_invoices', JSON.stringify(savedInvoices));
+
+        addLogEntry(logText, isSequenceChanged);
+
+        const container = document.getElementById('invoiceContainer');
+        container.classList.add('pdf-mode');
+
+        try {
+            const canvas = await html2canvas(container, { scale: 2, useCORS: true, windowWidth: 1000 });
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            const imgHeight = (canvas.height * 210) / canvas.width;
+            pdf.addImage(imgData, 'JPEG', 0, 0, 210, imgHeight);
+            pdf.save(`Invoice_${invNum}_${custName}.pdf`);
+        } catch(err) {
+            alert("حدث خطأ أثناء حفظ وتصدير الـ PDF");
+        } finally {
+            container.classList.remove('pdf-mode');
+        }
+
+        // تحديث رقم الفاتورة التالي بناءً على أكبر رقم فاتورة محفوظ
+        currentInvoiceNum = getExpectedNextInvoiceNumber();
+        invoiceNumberInput.value = currentInvoiceNum;
+        localStorage.setItem('fondant_last_inv_num', currentInvoiceNum);
+        clearFormFields();
+        alert(`تم الحفظ والتصدير بنجاح! الفاتورة التالية برقم: ${currentInvoiceNum}`);
+    });
+
+    function clearFormFields() {
+        customerInput.value = '';
+        document.getElementById('customerPhone').value = '';
+        document.getElementById('areaInput').value = '';
+        document.getElementById('blockInput').value = '';
+        document.getElementById('streetInput').value = '';
+        document.getElementById('jedaInput').value = '';
+        document.getElementById('homeInput').value = '';
+        populateAllDefaultItems();
+    }
+
+    document.getElementById('clearInvoiceBtn').addEventListener('click', () => {
+        if(confirm("هل تريد إعادة تحميل جميع الأصناف وتفريغ الحقول الحالية؟")) {
+            clearFormFields();
+            addLogEntry("تم إعادة تحميل الأصناف وتفريغ الفاتورة.", false);
+        }
+    });
+
+    document.getElementById('viewInvoicesBtn').addEventListener('click', () => {
+        const tbody = document.getElementById('savedInvoicesList');
+        const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+        tbody.innerHTML = '';
+        if(!saved.length) tbody.innerHTML = '<tr><td colspan="5">لا توجد فواتير محفوظة.</td></tr>';
+        else {
+            saved.forEach(inv => {
+                const row = tbody.insertRow();
+                row.insertCell(0).innerText = inv.number;
+                row.insertCell(1).innerText = inv.date;
+                row.insertCell(2).innerText = inv.customer;
+                row.insertCell(3).innerText = inv.total;
+                row.insertCell(4).innerHTML = `<button class="btn btn-secondary" style="padding:3px 10px;" onclick="loadSavedInvoice(${inv.number})">استدعاء</button>`;
+            });
+        }
+        document.getElementById('savedInvoicesModal').style.display = 'flex';
+    });
+
+    function loadSavedInvoice(invNum) {
+        const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+        const inv = saved.find(i => i.number === invNum);
+        if(inv) {
+            invoiceNumberInput.value = inv.number;
+            currentInvoiceNum = inv.number;
+            invoiceDateInput.value = inv.date;
+            customerInput.value = inv.customer;
+            document.getElementById('customerPhone').value = inv.phone || '';
+            invoiceRows.innerHTML = '';
+            inv.items.forEach(item => createRowElement(item));
+            closeModal('savedInvoicesModal');
+            addLogEntry(`تم استدعاء الفاتورة رقم [ ${invNum} ] للمعاينة.`, false);
+        }
+    }
+
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    // التحقق الدوري كل دقيقة من حالة النسخة الاحتياطية
+    checkBackupReminder();
+    setInterval(checkBackupReminder, 60000);
+
+    populateAllDefaultItems();
+</script>
+
+</body>
+</html>
