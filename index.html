@@ -8,8 +8,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #eef2f5; font-family: 'Segoe UI', Arial, sans-serif; padding: 15px; display: flex; justify-content: center; color: #111; flex-direction: column; align-items: center; }
-        .invoice-system { max-width: 950px; width: 100%; }
+        
+        /* ضبط المسافة بين الفاتورة والشريط الجانبي لتكون 1.00 سم */
+        body { background: #eef2f5; font-family: 'Segoe UI', Arial, sans-serif; padding: 15px; padding-right: 253px; color: #111; }
+        
+        .invoice-system { max-width: 950px; width: 100%; margin: 0 auto; }
 
         /* إزالة أسهم الأرقام (Spinners) من حقول الإدخال */
         input[type=number]::-webkit-inner-spin-button,
@@ -26,16 +29,18 @@
             width: 100%; max-width: 950px; background: #ff9800; color: #fff; padding: 10px 15px;
             border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 10px;
             display: none; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            position: relative; z-index: 10000;
         }
 
-        /* الأزرار العلوية المثبتة Sticky */
+        /* الشريط الجانبي */
         .top-bar { 
-            position: sticky; top: 10px; z-index: 9999; 
-            background: rgba(238, 242, 245, 0.95); padding: 12px 15px; 
+            position: fixed; right: 15px; top: 15px; width: 200px; 
+            background: rgba(238, 242, 245, 0.98); padding: 15px; 
             border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            display: flex; justify-content: space-between; gap: 6px; margin-bottom: 15px; flex-wrap: wrap;
+            display: flex; flex-direction: column; gap: 10px; 
+            max-height: calc(100vh - 30px); overflow-y: auto; z-index: 9999;
         }
-        .btn { padding: 9px 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn { padding: 10px 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; }
         .btn-primary { background: #28a745; color: white; }
         .btn-primary:hover { background: #218838; }
         .btn-info { background: #17a2b8; color: white; }
@@ -49,26 +54,36 @@
         .btn-danger { background: #dc3545; color: white; }
         .btn-danger:hover { background: #c82333; }
         
-        /* الورقة الخارجية للفاتورة مع هامش 1.0 سم */
+        /* الورقة الخارجية للفاتورة */
         .invoice-paper { 
             background: white; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
-            padding: 1.0cm; margin: auto; display: flex; flex-direction: column; min-height: 297mm;
+            padding: 0.8cm; margin: auto; display: flex; flex-direction: column; min-height: 297mm;
             position: relative; border: 1px solid #dcdcdc; width: 100%;
         }
         .invoice-content { flex: 1; }
 
-        /* رأس الفاتورة */
-        .header-top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
-        .header-right-side { text-align: right; font-size: 13px; font-weight: bold; color: #111; line-height: 1.5; }
-        .header-left-side { text-align: left; font-size: 19.5px; font-weight: bold; color: #111; line-height: 1.5; }
-        .header-center-logo { text-align: center; }
-        .logo-img { height: 65px; width: auto; object-fit: contain; }
-        .brand-name { font-size: 24px; font-weight: 900; letter-spacing: 1.5px; color: #000; margin-top: 3px; font-family: Arial, sans-serif; }
-
-        .invoice-no-row { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px; }
+        /* رأس الفاتورة - تم إعادة هيكلته بالكامل */
+        .header-top-row { display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 5px; }
+        .header-right-side { 
+            text-align: right; font-size: 12px; font-weight: bold; color: #111; line-height: 1.4; 
+            display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+        }
+        .header-line { display: flex; align-items: center; gap: 5px; }
+        .insta-icon { width: 22px; height: 22px; border-radius: 4px; }
+        .qr-code-img { width: 65px; height: 65px; margin-top: 5px; }
         
-        /* تنسيق رقم الفاتورة No. ثم الرقم */
-        .inv-no-badge { font-size: 20.7px; font-weight: bold; color: #d32f2f; display: flex; align-items: center; gap: 6px; }
+        .header-center-logo { text-align: center; }
+        .logo-img { height: 55px; width: auto; object-fit: contain; }
+        .brand-name { font-size: 20px; font-weight: 900; letter-spacing: 1.2px; color: #000; margin-top: 2px; font-family: Arial, sans-serif; }
+
+        .header-left-side { 
+            text-align: left; font-size: 18px; font-weight: bold; color: #111; line-height: 1.4; 
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .header-line-left { text-align: left; }
+        
+        /* رقم الفاتورة في الجهة المقابلة للـ QR Code */
+        .inv-no-badge { font-size: 20px; font-weight: bold; color: #d32f2f; display: flex; align-items: center; justify-content: flex-start; gap: 6px; }
         #invoiceNumberInput {
             border: none;
             border-bottom: 1.5px dotted #d32f2f;
@@ -76,7 +91,7 @@
             font-weight: bold;
             color: #d32f2f;
             text-align: center;
-            width: 110px;
+            width: 90px;
             background: transparent;
             outline: none;
             font-family: Arial, sans-serif;
@@ -84,99 +99,97 @@
         #invoiceNumberInput:focus { border-bottom-style: solid; }
 
         /* حقول العميل والعنوان */
-        .fields-container { display: flex; flex-direction: column; gap: 14px; margin-bottom: 15px; }
-        .field-line { display: flex; align-items: center; gap: 6px; width: 100%; }
-        .field-label { font-weight: bold; font-size: 14px; color: #222; white-space: nowrap; line-height: 1.5; }
+        .fields-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+        .field-line { display: flex; align-items: center; gap: 4px; width: 100%; }
+        .field-label { font-weight: bold; font-size: 12px; color: #222; white-space: nowrap; line-height: 1.4; }
         
         .dotted-input { 
             border: none; border-bottom: 1.5px dotted #444; 
-            font-size: 14.5px; 
-            padding: 5px 6px; font-weight: bold; 
+            font-size: 13px; 
+            padding: 3px 4px; font-weight: bold; 
             color: #000; outline: none; background: transparent;
             font-family: Arial, sans-serif;
-            line-height: 1.5;
+            line-height: 1.4;
             text-align: center;
         }
         .dotted-input:focus { border-bottom-style: solid; border-color: #000; }
 
         #customerInput {
-            font-size: 1.15em !important; 
+            font-size: 1.1em !important; 
             font-weight: 900 !important;
             color: #000;
             text-transform: capitalize;
             text-align: center !important;
         }
 
-        /* سطر العنوان مع ضبط المنطقة 4.0 سم */
+        /* سطر العنوان */
         .address-grid {
             display: grid;
             grid-template-columns: auto 4.0cm auto 50px auto 160px auto 50px auto 45px;
-            gap: 6px;
+            gap: 4px;
             align-items: center;
         }
-        .address-grid .field-label {
-            font-size: 12.5px;
-            line-height: 1.5;
-        }
-        .address-grid .dotted-input {
-            font-size: 13.5px;
-            padding: 4px 4px;
-            line-height: 1.5;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        #areaInput {
-            font-size: 14.95px !important; 
-            text-align: right !important;
-        }
+        .address-grid .field-label { font-size: 11px; line-height: 1.4; }
+        .address-grid .dotted-input { font-size: 12px; padding: 2px 4px; line-height: 1.4; width: 100%; box-sizing: border-box; }
+        #areaInput { font-size: 13px !important; text-align: right !important; }
 
         .autocomplete-wrapper { position: relative; flex: 1; width: 100%; }
         .autocomplete-list { position: absolute; top: 100%; right: 0; left: 0; background: white; border: 1px solid #888; max-height: 180px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.15); display: none; text-align: right; }
         .autocomplete-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 13px; }
         .autocomplete-item:hover { background: #f0f0f0; font-weight: bold; }
 
-        /* جدول الأصناف - تم تصغير عرض أعمدة Unit و Qty و Total إلى 2.75 سم لكل منها */
-        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; direction: ltr; table-layout: fixed; }
+        /* جدول الأصناف - تقليل ارتفاع الصفوف بشكل كبير */
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; direction: ltr; table-layout: fixed; }
         .items-table th { 
-            border: 1.2px solid #000; padding: 11px 6px; background: #ffffff; 
-            font-weight: bold; font-size: 13px; text-align: center; color: #000;
+            border: 1.2px solid #000; padding: 4px 4px; background: #ffffff; 
+            font-weight: bold; font-size: 12px; text-align: center; color: #000;
         }
         .items-table td { 
-            border: 1.2px solid #000; padding: 6px 6px; 
+            border: 1.2px solid #000; padding: 1px 4px; 
             text-align: center; vertical-align: middle; 
-            line-height: 1.6;
+            line-height: 1.0; height: 22px;
         }
         .items-table td input { 
             width: 100%; height: 100%;
             border: none; outline: none; background: transparent; 
-            font-size: 15px; font-weight: bold; text-align: center; color: #000;
+            font-size: 13px; font-weight: bold; text-align: center; color: #000;
             font-family: Arial, sans-serif;
             box-sizing: border-box;
-            padding: 6px;
+            padding: 1px 4px;
         }
-        .items-table td.prod-cell input { text-align: left; text-transform: capitalize; }
+        /* تصغير حجم خط اسم الصنف إلى 12px */
+        .items-table td.prod-cell input { text-align: left; text-transform: capitalize; font-size: 12px !important; }
+
+        /* توزيع أعمدة الجدول */
+        .items-table th:nth-child(1) { width: auto; }
+        .items-table th:nth-child(2) { width: 2.35cm; }
+        .items-table th:nth-child(3) { width: 1.80cm; }
+        .items-table th:nth-child(4) { width: 1.65cm; }
+        .items-table th:nth-child(5) { width: 5%; }
+
+        .qty-cell input { font-size: 14px !important; }
 
         .row-total {
-            font-size: 17px !important;
+            font-size: 14px !important;
             font-weight: 900 !important;
             color: #000;
             text-align: right !important;
-            padding-right: 8px;
+            padding-right: 4px;
         }
 
-        .add-row-btn { background: #17a2b8; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 15px; font-size: 13px; }
+        .add-row-btn { background: #17a2b8; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 10px; font-size: 12px; }
 
-        /* الإجمالي الكلي على اليمين */
-        .totals-section { display: flex; justify-content: flex-start; margin-top: 10px; margin-bottom: 25px; direction: rtl; }
+        /* الإجمالي الكلي */
+        .totals-section { display: flex; justify-content: flex-start; margin-top: 8px; margin-bottom: 15px; direction: rtl; }
         .total-box { 
-            border: 2px solid #000; padding: 10px 22px; border-radius: 6px; 
-            font-weight: bold; font-size: 16px; display: flex; gap: 15px; align-items: center; background: #fff;
+            border: 2px solid #000; padding: 8px 16px; border-radius: 6px; 
+            font-weight: bold; font-size: 14px; display: flex; gap: 15px; align-items: center; background: #fff;
         }
-        .total-val { color: #d32f2f; font-size: 20px; font-weight: 900; text-align: right; }
+        .total-val { color: #d32f2f; font-size: 16px; font-weight: 900; text-align: right; }
 
         /* التوقيعات */
-        .signatures-section { display: flex; justify-content: space-between; width: 100%; margin-top: 1.0cm; font-size: 15px; font-weight: bold; padding: 0 10px; direction: rtl; }
-        .sig-line { border-bottom: 1.5px dotted #333; width: 220px; display: inline-block; margin-right: 8px; }
+        .signatures-section { display: flex; justify-content: space-between; width: 100%; margin-top: 0.5cm; font-size: 13px; font-weight: bold; padding: 0 10px; direction: rtl; }
+        .sig-line { border-bottom: 1.5px dotted #333; width: 180px; display: inline-block; margin-right: 8px; }
 
         /* المودال */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; }
@@ -186,7 +199,8 @@
         .saved-table th, .saved-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         .saved-table th { background: #f8f9fa; }
 
-        .pdf-mode { padding: 1.0cm !important; box-shadow: none !important; border: 1px solid #000 !important; }
+        /* وضع PDF مطابق تماماً للعرض */
+        .pdf-mode { padding: 0.8cm !important; box-shadow: none !important; border: 1px solid #000 !important; }
         .pdf-mode .no-print { display: none !important; }
         .pdf-mode .dotted-input { border-bottom: 1.5px dotted #000 !important; }
     </style>
@@ -198,43 +212,46 @@
     <button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="exportBackup()">أخذ نسخة الآن</button>
 </div>
 
-<div class="invoice-system">
-    <div class="top-bar no-print">
-        <button class="btn btn-primary" id="saveAndExportBtn">💾 حفظ وتصدير PDF وتالي</button>
-        <button class="btn btn-success-dark" id="exportBackupBtn">💾 تصدير نسخة احتياطية</button>
-        <button class="btn btn-warning" onclick="document.getElementById('backupFileInput').click()">📂 استعادة نسخة احتياطية</button>
-        <input type="file" id="backupFileInput" style="display: none;" accept=".json" onchange="importBackup(event)">
-        <button class="btn btn-info" id="viewInvoicesBtn">📂 الفواتير المحفوظة</button>
-        <button class="btn btn-secondary" id="viewLogsBtn">📜 سجل الحركات</button>
-        <button class="btn btn-danger" id="clearInvoiceBtn">🗑️ إعادة تحميل الكل</button>
-    </div>
+<!-- الشريط الجانبي -->
+<div class="top-bar no-print">
+    <button class="btn btn-primary" id="saveAndExportBtn">💾 حفظ وتصدير PDF وتالي</button>
+    <button class="btn btn-success-dark" id="exportBackupBtn">💾 تصدير نسخة احتياطية</button>
+    <button class="btn btn-warning" onclick="document.getElementById('backupFileInput').click()">📂 استعادة نسخة احتياطية</button>
+    <input type="file" id="backupFileInput" style="display: none;" accept=".json" onchange="importBackup(event)">
+    <button class="btn btn-info" id="viewInvoicesBtn">📂 الفواتير المحفوظة</button>
+    <button class="btn btn-secondary" id="viewLogsBtn">📜 سجل الحركات</button>
+    <button class="btn btn-info" id="manageItemsBtn">⚙️ إدارة الأصناف</button>
+    <button class="btn btn-danger" id="clearInvoiceBtn">🗑️ إعادة تحميل الكل</button>
+</div>
 
+<div class="invoice-system">
     <div class="invoice-paper" id="invoiceContainer">
         <div class="invoice-content">
             
-            <!-- الهيدر مع أيقونة إنستجرام -->
+            <!-- الجزء العلوي للفاتورة -->
             <div class="header-top-row">
+                <!-- العمود الأيمن: الفروع، الهواتف، الإنستغرام، الموقع، QR -->
                 <div class="header-right-side">
-                    فرع صباح الأحمد 6010 9932 📞💬<br>
-                    فرع أسواق القرين 6070 9931 📞💬<br>
-                    fondant.q8 <img src="https://i.postimg.cc/BbbNyRM8/Instagram-app-logo.jpg" alt="Instagram" style="width: 28px; height: 28px; vertical-align: middle; border-radius: 4px;"><br>
-                    www.fondant-kw.com
+                    <div class="header-line">فرع أسواق القرين:</div>
+                    <div class="header-line">6070 9931 - 6010 9932 📞💬</div>
+                    <div class="header-line">fondant.q8 <img src="https://i.postimg.cc/BbbNyRM8/Instagram-app-logo.jpg" alt="Instagram" class="insta-icon"></div>
+                    <div class="header-line">www.fondant-kw.com</div>
+                    <img src="https://i.postimg.cc/fLLx3hGx/instagram-QR-Code.png" alt="QR Code" class="qr-code-img">
                 </div>
+                
+                <!-- المنتصف: الشعار واسم البراند -->
                 <div class="header-center-logo">
-                    <img src="https://i.postimg.cc/YC3c8kLw/logo-3.png" alt="Logo" class="logo-img" onerror="this.src='https://placehold.co/80x80?text=FONDANT'">
+                    <img src="https://i.postimg.cc/WbJw6TdV/Orig-LOGO-Square.jpg" alt="Logo" class="logo-img" onerror="this.src='https://placehold.co/80x80?text=FONDANT'">
                     <div class="brand-name">FONDANT CHOCO</div>
                 </div>
+                
+                <!-- العمود الأيسر: نوع الفاتورة ورقم الفاتورة (مقابل QR) -->
                 <div class="header-left-side">
-                    فاتورة نقداً / بالحساب<br>
-                    Cash/Credit Invoice
-                </div>
-            </div>
-
-            <!-- رقم الفاتورة (No. ثم الرقم) -->
-            <div class="invoice-no-row">
-                <div class="inv-no-badge" dir="ltr">
-                    <span>No.</span>
-                    <input type="number" id="invoiceNumberInput" value="4367">
+                    <div class="header-line-left">فاتورة نقداً / بالحساب<br>Cash/Credit Invoice</div>
+                    <div class="inv-no-badge" dir="ltr">
+                        <span>INV No.</span>
+                        <input type="number" id="invoiceNumberInput" value="4367">
+                    </div>
                 </div>
             </div>
 
@@ -247,11 +264,11 @@
                         <div id="customerList" class="autocomplete-list"></div>
                     </div>
 
-                    <span class="field-label" style="margin-right: 15px;">تليفون / Tel:</span>
-                    <input type="text" id="customerPhone" class="dotted-input" style="width: 140px; text-align: center;">
+                    <span class="field-label" style="margin-right: 10px;">تليفون / Tel:</span>
+                    <input type="text" id="customerPhone" class="dotted-input" style="width: 130px; text-align: center;">
 
                     <span class="field-label" style="margin-right: auto;">:تاريخ الطلب</span>
-                    <input type="date" id="invoiceDate" class="dotted-input" style="width: 135px; text-align: center;">
+                    <input type="date" id="invoiceDate" class="dotted-input" style="width: 125px; text-align: center;">
                 </div>
 
                 <!-- سطر العنوان -->
@@ -273,15 +290,15 @@
                 </div>
             </div>
 
-            <!-- جدول الأصناف (عرض الأعمدة Unit و Qty و Total = 2.75 سم لكل عمود) -->
+            <!-- جدول الأصناف الرئيسي -->
             <table class="items-table" id="itemsTable">
                 <thead>
                     <tr>
-                        <th style="width: auto;">Description التفاصيل</th>
-                        <th style="width: 2.75cm;">Unit سعر الوحدة</th>
-                        <th style="width: 2.75cm;">Qty الكمية</th>
-                        <th style="width: 2.75cm;">Total المبلغ<br><small>(دينار | فلس)</small></th>
-                        <th class="no-print" style="width: 5%;"></th>
+                        <th>Description التفاصيل</th>
+                        <th>Unit سعر الوحدة</th>
+                        <th>Qty الكمية</th>
+                        <th>Total المبلغ<br><small>(دينار | فلس)</small></th>
+                        <th class="no-print"></th>
                     </tr>
                 </thead>
                 <tbody id="invoiceRows"></tbody>
@@ -289,11 +306,32 @@
 
             <button type="button" class="add-row-btn no-print" id="addItemBtn">+ إضافة صنف إضافي</button>
 
+            <!-- فاصل بين الأصناف والمرتجعات -->
+            <div style="margin-top: 15px; margin-bottom: 10px; border-top: 2px dashed #000;"></div>
+            <div style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">المرتجعات / Returns</div>
+
+            <!-- جدول المرتجعات -->
+            <table class="items-table returns-table" id="returnsTable">
+                <thead>
+                    <tr>
+                        <th>Description التفاصيل</th>
+                        <th>Qty الكمية</th>
+                        <th class="no-print"></th>
+                    </tr>
+                </thead>
+                <tbody id="returnsRows"></tbody>
+            </table>
+            <button type="button" class="add-row-btn no-print" id="addReturnBtn">+ إضافة صنف مرتجع</button>
+
             <!-- الإجمالي الكلي على اليمين -->
             <div class="totals-section">
-                <div class="total-box">
-                    <span>Total Amount الإجمالي الكلي:</span>
-                    <span class="total-val" id="grandTotalVal">KD 0.000</span>
+                <div class="total-box" style="display: block; text-align: left; min-width: 220px;">
+                    <div style="font-size: 14px; margin-bottom: 3px;">
+                        Total Amount : <span class="total-val" id="grandTotalVal" style="font-size: 16px;">KD 0.000</span>
+                    </div>
+                    <div style="font-size: 14px; text-align: right; direction: rtl; font-weight: bold;">
+                        الإجمالي الكلي
+                    </div>
                 </div>
             </div>
 
@@ -301,12 +339,12 @@
             <div class="signatures-section">
                 <div>
                     اسم السائق المستلم:<br>
-                    <span style="font-size: 11px; font-weight: normal; color: #444;">Driver Name:</span>
+                    <span style="font-size: 10px; font-weight: normal; color: #444;">Driver Name:</span>
                     <span class="sig-line"></span>
                 </div>
                 <div>
                     توقيع العميل:<br>
-                    <span style="font-size: 11px; font-weight: normal; color: #444;">Customer Signature:</span>
+                    <span style="font-size: 10px; font-weight: normal; color: #444;">Customer Signature:</span>
                     <span class="sig-line"></span>
                 </div>
             </div>
@@ -357,6 +395,30 @@
     </div>
 </div>
 
+<!-- Modal إدارة الأصناف -->
+<div class="modal-overlay" id="itemsModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>إدارة الأصناف والأسعار</h3>
+            <div>
+                <button class="btn btn-primary" onclick="addItemToModal()">+ إضافة صنف</button>
+                <button class="btn btn-success" onclick="saveItemsModal()">💾 حفظ التعديلات</button>
+                <button class="btn btn-danger" onclick="closeModal('itemsModal')">إغلاق ✖</button>
+            </div>
+        </div>
+        <table class="saved-table">
+            <thead>
+                <tr>
+                    <th>اسم الصنف</th>
+                    <th>السعر (KD)</th>
+                    <th>إجراء</th>
+                </tr>
+            </thead>
+            <tbody id="itemsListTable"></tbody>
+        </table>
+    </div>
+</div>
+
 <script>
     function getExpectedNextInvoiceNumber() {
         let savedInvoices = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
@@ -394,6 +456,7 @@
             last_inv_num: currentInvoiceNum,
             saved_invoices: localStorage.getItem('fondant_saved_invoices'),
             logs: localStorage.getItem('fondant_logs'),
+            items: localStorage.getItem('fondant_items'),
             backup_time: Date.now()
         };
         const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
@@ -421,6 +484,7 @@
                 if (data.last_inv_num) localStorage.setItem('fondant_last_inv_num', data.last_inv_num);
                 if (data.saved_invoices) localStorage.setItem('fondant_saved_invoices', data.saved_invoices);
                 if (data.logs) localStorage.setItem('fondant_logs', data.logs);
+                if (data.items) localStorage.setItem('fondant_items', data.items);
                 localStorage.setItem('fondant_last_backup_time', Date.now());
                 alert("تم استعادة النسخة الاحتياطية بنجاح! سيتم تحديث الصفحة الآن.");
                 location.reload();
@@ -438,7 +502,8 @@
         });
     }
 
-    const rawItemsDB = [
+    // الأصناف الافتراضية
+    const defaultItemsDB = [
         { name: "SWEET GRAHAM", price: 0.600 },
         { name: "HALLOM CROLL SANDWITCH", price: 0.500 },
         { name: "TURKEY CROLL SANDWITCH", price: 0.500 },
@@ -455,10 +520,23 @@
         { name: "CHICKEN SAJ", price: 0.500 },
         { name: "HALLOM SAJ", price: 0.500 },
         { name: "GRAPE LEVES LIMON", price: 0.450 },
-        { name: "GRAPE LEVES ROMAN", price: 0.450 }
+        { name: "GRAPE LEVES ROMAN", price: 0.450 },
+        { name: "BROWNIES CUPS", price: 0.500 },
+        { name: "SAFRAN CAKE", price: 0.500 },
+        { name: "STRAWBERRY CHEEZ CAKE", price: 0.450 },
+        { name: "CHOCOLATE CHEESECAKE", price: 0.450 },
+        { name: "TIRAMISU CHEESECAKE", price: 0.500 }
     ];
 
-    const itemsDB = rawItemsDB.map(i => ({
+    function loadItemsDB() {
+        const stored = localStorage.getItem('fondant_items');
+        if (stored) {
+            return JSON.parse(stored);
+        }
+        return defaultItemsDB;
+    }
+
+    let itemsDB = loadItemsDB().map(i => ({
         name: toCapitalTitleCase(i.name),
         price: i.price
     }));
@@ -475,6 +553,7 @@
     const customerInput = document.getElementById('customerInput');
     const customerList = document.getElementById('customerList');
     const invoiceRows = document.getElementById('invoiceRows');
+    const returnsRows = document.getElementById('returnsRows');
 
     const today = new Date().toISOString().split('T')[0];
     invoiceDateInput.value = today;
@@ -500,6 +579,31 @@
         } else { customerList.style.display = 'none'; }
     });
 
+    // دالة مساعدة لإعداد الإكمال التلقائي
+    function initAutocomplete(inputElement, listElement, onSelectCallback) {
+        inputElement.addEventListener('input', function() {
+            this.value = toCapitalTitleCase(this.value);
+            const val = this.value.toLowerCase();
+            listElement.innerHTML = '';
+            if(!val) { listElement.style.display = 'none'; return; }
+            const matches = itemsDB.filter(i => i.name.toLowerCase().includes(val));
+            if(matches.length) {
+                matches.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerText = `${item.name} - (${item.price.toFixed(3)} KD)`;
+                    div.onclick = () => {
+                        inputElement.value = item.name;
+                        listElement.style.display = 'none';
+                        if(onSelectCallback) onSelectCallback(item);
+                    };
+                    listElement.appendChild(div);
+                });
+                listElement.style.display = 'block';
+            } else { listElement.style.display = 'none'; }
+        });
+    }
+
     function createRowElement(itemData = null) {
         const rowId = Date.now() + Math.random().toString().substr(2, 4);
         const tr = document.createElement('tr');
@@ -515,9 +619,9 @@
                 <input type="text" class="prod-input" value="${prodName}" placeholder="ابحث عن الصنف...">
                 <div class="autocomplete-list prod-list"></div>
             </td>
-            <td style="width: 2.75cm;"><input type="number" class="price-input" value="${prodPrice}" step="0.001"></td>
-            <td style="width: 2.75cm;"><input type="number" class="qty-input" value="${prodQty}" min="1" placeholder=""></td>
-            <td class="row-total" style="width: 2.75cm;">${prodTotal}</td>
+            <td><input type="number" class="price-input" value="${prodPrice}" step="0.001"></td>
+            <td class="qty-cell"><input type="number" class="qty-input" value="${prodQty}" min="1" placeholder=""></td>
+            <td class="row-total">${prodTotal}</td>
             <td class="no-print">
                 <button class="btn-danger" style="padding:4px 8px; border-radius:3px; font-size:12px;" onclick="document.getElementById('row-${rowId}').remove(); updateGrandTotal();">✖</button>
             </td>
@@ -530,27 +634,9 @@
         const priceInput = tr.querySelector('.price-input');
         const qtyInput = tr.querySelector('.qty-input');
 
-        prodInput.addEventListener('input', function() {
-            this.value = toCapitalTitleCase(this.value);
-            const val = this.value.toLowerCase();
-            prodList.innerHTML = '';
-            if(!val) { prodList.style.display = 'none'; return; }
-            const matches = itemsDB.filter(i => i.name.toLowerCase().includes(val));
-            if(matches.length) {
-                matches.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'autocomplete-item';
-                    div.innerText = `${item.name} - (${item.price.toFixed(3)} KD)`;
-                    div.onclick = () => {
-                        prodInput.value = item.name;
-                        priceInput.value = item.price.toFixed(3);
-                        prodList.style.display = 'none';
-                        calculateRowTotal(tr);
-                    };
-                    prodList.appendChild(div);
-                });
-                prodList.style.display = 'block';
-            } else { prodList.style.display = 'none'; }
+        initAutocomplete(prodInput, prodList, (item) => {
+            priceInput.value = item.price.toFixed(3);
+            calculateRowTotal(tr);
         });
 
         priceInput.addEventListener('input', () => calculateRowTotal(tr));
@@ -580,6 +666,33 @@
         calculateRowTotal(tr);
     }
 
+    function createReturnRowElement(itemData = null) {
+        const rowId = Date.now() + Math.random().toString().substr(2, 4);
+        const tr = document.createElement('tr');
+        tr.id = `return-row-${rowId}`;
+        
+        const prodName = itemData ? toCapitalTitleCase(itemData.name) : '';
+        const prodQty = itemData && itemData.qty !== undefined ? itemData.qty : '';
+
+        tr.innerHTML = `
+            <td class="prod-cell autocomplete-wrapper">
+                <input type="text" class="prod-input" value="${prodName}" placeholder="ابحث عن الصنف المرتجع...">
+                <div class="autocomplete-list prod-list"></div>
+            </td>
+            <td class="qty-cell"><input type="number" class="qty-input" value="${prodQty}" min="1" placeholder=""></td>
+            <td class="no-print">
+                <button class="btn-danger" style="padding:4px 8px; border-radius:3px; font-size:12px;" onclick="document.getElementById('return-row-${rowId}').remove();">✖</button>
+            </td>
+        `;
+
+        returnsRows.appendChild(tr);
+
+        const prodInput = tr.querySelector('.prod-input');
+        const prodList = tr.querySelector('.prod-list');
+
+        initAutocomplete(prodInput, prodList, null);
+    }
+
     function calculateRowTotal(row) {
         const price = parseFloat(row.querySelector('.price-input').value) || 0;
         const qtyStr = row.querySelector('.qty-input').value.trim();
@@ -591,7 +704,7 @@
 
     function updateGrandTotal() {
         let grand = 0;
-        document.querySelectorAll('.row-total').forEach(el => grand += parseFloat(el.innerText) || 0);
+        document.querySelectorAll('#invoiceRows .row-total').forEach(el => grand += parseFloat(el.innerText) || 0);
         document.getElementById('grandTotalVal').innerText = 'KD ' + grand.toFixed(3);
     }
 
@@ -608,6 +721,7 @@
     }
 
     document.getElementById('addItemBtn').addEventListener('click', () => createRowElement());
+    document.getElementById('addReturnBtn').addEventListener('click', () => createReturnRowElement());
 
     // السجل حتى 500 حركة مع دعم تلوين تغيير التسلسل بالأحمر
     function addLogEntry(actionDetails, isHtml = false) {
@@ -639,6 +753,7 @@
         document.getElementById('logsModal').style.display = 'flex';
     });
 
+    // حفظ وتصدير الفاتورة
     document.getElementById('saveAndExportBtn').addEventListener('click', async function() {
         if(!customerInput.value.trim()) { alert("يرجى إدخال اسم العميل أولاً."); return; }
 
@@ -659,7 +774,6 @@
         const custName = customerInput.value.trim();
         const grandTotal = document.getElementById('grandTotalVal').innerText;
 
-        // التحقق مما إذا تم تغيير تسلسل الفاتورة يدوياً
         const expectedNext = getExpectedNextInvoiceNumber();
         const isSequenceChanged = parseInt(invNum) !== expectedNext;
 
@@ -678,6 +792,15 @@
             });
         });
 
+        let returns = [];
+        document.querySelectorAll('#returnsRows tr').forEach(tr => {
+            const name = tr.querySelector('.prod-input').value;
+            const qty = tr.querySelector('.qty-input').value;
+            if (name || qty) {
+                returns.push({ name: name, qty: qty });
+            }
+        });
+
         let savedInvoices = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
         savedInvoices.push({
             number: invNum,
@@ -685,7 +808,8 @@
             customer: custName,
             phone: document.getElementById('customerPhone').value,
             total: grandTotal,
-            items: items
+            items: items,
+            returns: returns
         });
         localStorage.setItem('fondant_saved_invoices', JSON.stringify(savedInvoices));
 
@@ -695,7 +819,7 @@
         container.classList.add('pdf-mode');
 
         try {
-            const canvas = await html2canvas(container, { scale: 2, useCORS: true, windowWidth: 1000 });
+            const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             const imgData = canvas.toDataURL('image/jpeg', 0.95);
@@ -708,7 +832,6 @@
             container.classList.remove('pdf-mode');
         }
 
-        // تحديث رقم الفاتورة التالي بناءً على أكبر رقم فاتورة محفوظ
         currentInvoiceNum = getExpectedNextInvoiceNumber();
         invoiceNumberInput.value = currentInvoiceNum;
         localStorage.setItem('fondant_last_inv_num', currentInvoiceNum);
@@ -724,6 +847,7 @@
         document.getElementById('streetInput').value = '';
         document.getElementById('jedaInput').value = '';
         document.getElementById('homeInput').value = '';
+        returnsRows.innerHTML = '';
         populateAllDefaultItems();
     }
 
@@ -734,6 +858,7 @@
         }
     });
 
+    // الفواتير المحفوظة
     document.getElementById('viewInvoicesBtn').addEventListener('click', () => {
         const tbody = document.getElementById('savedInvoicesList');
         const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
@@ -763,6 +888,12 @@
             document.getElementById('customerPhone').value = inv.phone || '';
             invoiceRows.innerHTML = '';
             inv.items.forEach(item => createRowElement(item));
+            
+            returnsRows.innerHTML = '';
+            if (inv.returns && inv.returns.length) {
+                inv.returns.forEach(item => createReturnRowElement(item));
+            }
+            
             closeModal('savedInvoicesModal');
             addLogEntry(`تم استدعاء الفاتورة رقم [ ${invNum} ] للمعاينة.`, false);
         }
@@ -770,7 +901,63 @@
 
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    // التحقق الدوري كل دقيقة من حالة النسخة الاحتياطية
+    // إدارة الأصناف
+    document.getElementById('manageItemsBtn').addEventListener('click', () => {
+        renderItemsModal();
+        document.getElementById('itemsModal').style.display = 'flex';
+    });
+
+    function renderItemsModal() {
+        const tbody = document.getElementById('itemsListTable');
+        tbody.innerHTML = '';
+        itemsDB.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="edit-item-name" value="${item.name}" style="width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:14px;"></td>
+                <td><input type="number" class="edit-item-price" value="${item.price.toFixed(3)}" step="0.001" style="width:80px; text-align:center; border:none; background:transparent; font-weight:bold; font-size:14px;"></td>
+                <td><button class="btn btn-danger" onclick="deleteItem(${index})">حذف</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function addItemToModal() {
+        const tbody = document.getElementById('itemsListTable');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="edit-item-name" value="" placeholder="اسم الصنف" style="width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:14px;"></td>
+            <td><input type="number" class="edit-item-price" value="0.500" step="0.001" style="width:80px; text-align:center; border:none; background:transparent; font-weight:bold; font-size:14px;"></td>
+            <td><button class="btn btn-danger" onclick="this.closest('tr').remove()">حذف</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function deleteItem(index) {
+        if (confirm("هل أنت متأكد من حذف هذا الصنف؟")) {
+            itemsDB.splice(index, 1);
+            renderItemsModal();
+        }
+    }
+
+    function saveItemsModal() {
+        const rows = document.querySelectorAll('#itemsListTable tr');
+        const newItems = [];
+        rows.forEach(row => {
+            const nameInput = row.querySelector('.edit-item-name');
+            const priceInput = row.querySelector('.edit-item-price');
+            if (nameInput && priceInput) {
+                const name = nameInput.value.trim();
+                const price = parseFloat(priceInput.value) || 0;
+                if (name) newItems.push({ name: toCapitalTitleCase(name), price: price });
+            }
+        });
+        localStorage.setItem('fondant_items', JSON.stringify(newItems));
+        itemsDB = newItems;
+        alert("تم حفظ الأصناف بنجاح!");
+        closeModal('itemsModal');
+        if (document.querySelectorAll('#invoiceRows tr').length === 0) populateAllDefaultItems();
+    }
+
     checkBackupReminder();
     setInterval(checkBackupReminder, 60000);
 
