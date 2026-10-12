@@ -448,7 +448,7 @@
             const maxNum = Math.max(...savedInvoices.map(inv => parseInt(inv.number) || 0));
             return maxNum + 1;
         }
-        return parseInt(localStorage.getItem('fondant_last_inv_num') || "4367");
+        return parseInt(localStorage.getItem('fondant_last_inv_num') || "5001");
     }
 
     let currentInvoiceNum = getExpectedNextInvoiceNumber();
