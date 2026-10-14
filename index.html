@@ -4,43 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FONDANT CHOCO - نظام الفواتير</title>
+    <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/WbJw6TdV/Orig-LOGO-Square.jpg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        /* ضبط المسافة بين الفاتورة والشريط الجانبي لتكون 1.00 سم */
-        body { background: #eef2f5; font-family: 'Segoe UI', Arial, sans-serif; padding: 15px; padding-right: 253px; color: #111; }
-        
-        .invoice-system { max-width: 950px; width: 100%; margin: 0 auto; }
+        body { background: #eef2f5; font-family: 'Segoe UI', Arial, sans-serif; padding: 15px; padding-right: 210px; color: #111; }
+        .invoice-system { max-width: 950px; width: 100%; margin: 0 0 0 auto; }
 
-        /* إزالة أسهم الأرقام (Spinners) من حقول الإدخال */
         input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type=number] {
-            -moz-appearance: textfield;
-        }
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
 
-        /* شريط التنبيه بالنسخة الاحتياطية */
         #backupReminderBanner {
-            width: 100%; max-width: 950px; background: #ff9800; color: #fff; padding: 10px 15px;
-            border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 10px;
-            display: none; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            width: 100%; max-width: 950px; background: #ff9800; color: #fff;
+            padding: 10px 15px; border-radius: 6px; font-weight: bold; font-size: 14px;
+            margin-bottom: 10px; display: none; justify-content: space-between;
+            align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
             position: relative; z-index: 10000;
         }
 
-        /* الشريط الجانبي */
-        .top-bar { 
-            position: fixed; right: 15px; top: 15px; width: 200px; 
-            background: rgba(238, 242, 245, 0.98); padding: 15px; 
-            border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            display: flex; flex-direction: column; gap: 10px; 
-            max-height: calc(100vh - 30px); overflow-y: auto; z-index: 9999;
+        /* الشريط الجانبي لسطح المكتب */
+        .top-bar {
+            position: fixed; right: 0; top: 0; width: 210px; height: 100vh;
+            background: rgba(238, 242, 245, 0.99); padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: flex;
+            flex-direction: column; gap: 10px; overflow-y: auto; z-index: 9999;
+            transition: right 0.3s ease;
         }
-        .btn { padding: 10px 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; }
+
+        /* شريط الجوال العلوي */
+        .mobile-header-bar {
+            display: none;
+        }
+
+        .btn {
+            padding: 10px 14px; border: none; border-radius: 6px; font-weight: bold;
+            cursor: pointer; font-size: 13px; transition: 0.2s; display: flex;
+            align-items: center; justify-content: center; gap: 5px; width: 100%;
+        }
         .btn-primary { background: #28a745; color: white; }
         .btn-primary:hover { background: #218838; }
         .btn-info { background: #17a2b8; color: white; }
@@ -53,177 +55,425 @@
         .btn-secondary:hover { background: #5a6268; }
         .btn-danger { background: #dc3545; color: white; }
         .btn-danger:hover { background: #c82333; }
-        
-        /* الورقة الخارجية للفاتورة - تم ضبط الهامش ليكون 0.6 سم */
-        .invoice-paper { 
-            background: white; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
-            padding: 0.6cm; margin: auto; display: flex; flex-direction: column; min-height: 297mm;
-            position: relative; border: 1px solid #dcdcdc; width: 100%;
-        }
-        .invoice-content { flex: 1; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-purple { background: #6f42c1; color: white; }
+        .btn-purple:hover { background: #5a32a3; }
+        .btn-orange { background: #fd7e14; color: white; }
+        .btn-orange:hover { background: #e8590c; }
 
-        /* رأس الفاتورة */
-        .header-top-row { display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 5px; }
-        .header-right-side { 
-            text-align: right; font-size: 12px; font-weight: bold; color: #111; line-height: 1.4; 
-            display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+        .invoice-type-nav { display: flex; gap: 10px; margin-bottom: 10px; }
+        .invoice-type-btn {
+            flex: 1; padding: 10px; border: 2px solid #17a2b8; background: #fff;
+            color: #17a2b8; border-radius: 6px; font-weight: bold;
+            cursor: pointer; transition: 0.2s; font-size: 13px;
         }
-        .header-line { display: flex; align-items: center; gap: 5px; }
+        .invoice-type-btn.active { background: #17a2b8; color: #fff; }
+        .invoice-type-btn:hover { background: #138496; color: #fff; }
+
+        .invoice-paper {
+            background: white; border-radius: 2px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 0.5cm; margin: auto; display: flex; flex-direction: column;
+            min-height: 297mm; position: relative; border: 2px solid #222; width: 100%;
+        }
+        .invoice-content { flex: 1; padding: 0.15cm; }
+
+        .header-top-row { display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 5px; }
+        .header-right-side {
+            text-align: center; font-size: 12px; font-weight: bold; color: #111;
+            line-height: 1.4; display: flex; flex-direction: column;
+            align-items: center; gap: 2px;
+        }
+        .header-line { display: flex; align-items: center; justify-content: center; gap: 5px; }
         .insta-icon { width: 22px; height: 22px; border-radius: 4px; }
         .qr-code-img { width: 65px; height: 65px; margin-top: 5px; }
-        
-        .header-center-logo { text-align: center; }
-        .logo-img { height: 55px; width: auto; object-fit: contain; }
-        .brand-name { font-size: 20px; font-weight: 900; letter-spacing: 1.2px; color: #000; margin-top: 2px; font-family: Arial, sans-serif; }
 
-        .header-left-side { 
-            text-align: left; font-size: 18px; font-weight: bold; color: #111; line-height: 1.4; 
-            display: flex; flex-direction: column; justify-content: space-between;
+        .header-center-logo { text-align: center; }
+        .logo-img { height: 63px; width: auto; object-fit: contain; }
+        .brand-name {
+            font-size: 20px; font-weight: 900; letter-spacing: 1.2px;
+            color: #000; margin-top: 5px; font-family: Arial, sans-serif;
+        }
+
+        .header-left-side {
+            text-align: left; font-size: 18px; font-weight: bold; color: #111;
+            line-height: 1.4; display: flex; flex-direction: column;
+            justify-content: space-between;
         }
         .header-line-left { text-align: left; }
-        
-        /* رقم الفاتورة في الجهة المقابلة للـ QR Code */
-        .inv-no-badge { font-size: 20px; font-weight: bold; color: #d32f2f; display: flex; align-items: center; justify-content: flex-start; gap: 6px; }
+
+        .inv-no-badge {
+            font-size: 20px; font-weight: bold; color: #d32f2f;
+            display: flex; align-items: center; justify-content: flex-start; gap: 6px;
+        }
         #invoiceNumberInput {
-            border: none;
-            border-bottom: 1.5px dotted #d32f2f;
-            font-size: 20px;
-            font-weight: bold;
-            color: #d32f2f;
-            text-align: center;
-            width: 90px;
-            background: transparent;
-            outline: none;
-            font-family: Arial, sans-serif;
+            border: none; border-bottom: 1.5px dotted #d32f2f; font-size: 20px;
+            font-weight: bold; color: #d32f2f; text-align: center; width: 90px;
+            background: transparent; outline: none; font-family: Arial, sans-serif;
         }
         #invoiceNumberInput:focus { border-bottom-style: solid; }
 
-        /* حقول العميل والعنوان */
         .fields-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
         .field-line { display: flex; align-items: center; gap: 4px; width: 100%; }
         .field-label { font-weight: bold; font-size: 12px; color: #222; white-space: nowrap; line-height: 1.4; }
-        
-        .dotted-input { 
-            border: none; border-bottom: 1.5px dotted #444; 
-            font-size: 13px; 
-            padding: 3px 4px; font-weight: bold; 
-            color: #000; outline: none; background: transparent;
-            font-family: Arial, sans-serif;
-            line-height: 1.4;
-            text-align: center;
+
+        .dotted-input {
+            border: none; border-bottom: 1.5px dotted #444; font-size: 13px;
+            padding: 3px 4px; font-weight: bold; color: #000; outline: none;
+            background: transparent; font-family: Arial, sans-serif;
+            line-height: 1.4; text-align: center;
         }
         .dotted-input:focus { border-bottom-style: solid; border-color: #000; }
 
         #customerInput {
-            font-size: 1.1em !important; 
-            font-weight: 900 !important;
-            color: #000;
-            text-transform: capitalize;
-            text-align: center !important;
+            font-size: 1.1em !important; font-weight: 900 !important;
+            color: #000; text-transform: capitalize; text-align: center !important;
         }
 
-        /* سطر العنوان */
-        .address-grid {
-            display: grid;
-            grid-template-columns: auto 4.0cm auto 50px auto 160px auto 50px auto 45px;
-            gap: 4px;
-            align-items: center;
+        #customerPhone {
+            font-size: 15.6px !important;
+            font-weight: 900 !important;
         }
-        .address-grid .field-label { font-size: 11px; line-height: 1.4; }
-        .address-grid .dotted-input { font-size: 12px; padding: 2px 4px; line-height: 1.4; width: 100%; box-sizing: border-box; }
-        #areaInput { font-size: 13px !important; text-align: right !important; }
+
+        .address-grid { display: flex; gap: 5px; align-items: flex-end; width: 100%; }
+        .address-grid .field-label { font-size: 10.5px; line-height: 1.3; white-space: nowrap; flex-shrink: 0; }
+        .address-grid .dotted-input {
+            font-size: 12px; padding: 2px 4px; line-height: 1.3;
+            box-sizing: border-box; text-align: center;
+        }
+        #areaInput { flex: 1.2 1 0; min-width: 70px; font-size: 15.6px !important; text-align: center !important; }
+        #blockInput, #jedaInput, #homeInput {
+            flex: 0 0 1.0cm; width: 1.0cm; min-width: 1.0cm; max-width: 1.0cm;
+        }
+
+        #streetInput {
+            flex: 1 1 auto; min-width: 80px;
+            min-height: 1.5em; max-height: 3em;
+            overflow-y: auto; line-height: 1.3; font-family: Arial, sans-serif;
+            font-size: 15.18px;
+            padding: 2px 4px; border: none; border-bottom: 1.5px dotted #444;
+            font-weight: bold; background: transparent; outline: none;
+            text-align: center; color: #000; box-sizing: border-box;
+            word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap;
+        }
+        #streetInput:focus { border-bottom-style: solid; border-color: #000; }
+        #streetInput:empty:before { content: attr(data-placeholder); color: #aaa; font-weight: normal; }
 
         .autocomplete-wrapper { position: relative; flex: 1; width: 100%; }
-        .autocomplete-list { position: absolute; top: 100%; right: 0; left: 0; background: white; border: 1px solid #888; max-height: 180px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.15); display: none; text-align: right; }
-        .autocomplete-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 13px; }
+        .autocomplete-list {
+            position: absolute; top: 100%; right: 0; left: 0;
+            background: white; border: 1px solid #888; max-height: 180px;
+            overflow-y: auto; z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            display: none; text-align: right;
+        }
+        .autocomplete-item {
+            padding: 8px 12px; cursor: pointer;
+            border-bottom: 1px solid #eee; font-size: 13px;
+        }
         .autocomplete-item:hover { background: #f0f0f0; font-weight: bold; }
 
-        /* جدول الأصناف - ضبط التوسيط الرأسي والمسافات */
+        #customerList {
+            background: #e3f2fd;
+            border: 2px solid #1976d2;
+            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.35);
+        }
+        #customerList .autocomplete-item {
+            font-size: 19.5px;
+            font-weight: 900;
+            background: #e3f2fd;
+            color: #0d47a1;
+            padding: 12px 16px;
+            border-bottom: 1px solid #90caf9;
+            letter-spacing: 0.5px;
+            transition: 0.15s;
+        }
+        #customerList .autocomplete-item:hover {
+            background: #1976d2;
+            color: #ffffff;
+            font-weight: 900;
+        }
+
         .items-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; direction: ltr; table-layout: fixed; }
-        .items-table th { 
-            border: 1.2px solid #000; padding: 4px 4px; background: #ffffff; 
+        .items-table th {
+            border: 1.2px solid #000; padding: 4px 4px; background: #ffffff;
             font-weight: bold; font-size: 12px; text-align: center; color: #000;
         }
-        .items-table td { 
-            border: 1.2px solid #000; 
-            padding: 4px 4px; /* حشو متساوي لضمان توسيط رأسي مثالي */
-            text-align: center; 
-            vertical-align: middle; /* التوسيط الرأسي للخلايا */
-            line-height: 1.2;
+        .items-table td {
+            border: 1.2px solid #000; padding: 4px 4px;
+            text-align: center; vertical-align: middle; line-height: 1.2;
         }
-        .items-table td input { 
-            width: 100%; 
-            height: 100%;
-            border: none; 
-            outline: none; 
-            background: transparent; 
-            font-size: 13px; 
-            font-weight: bold; 
-            text-align: center; 
-            color: #000;
-            font-family: Arial, sans-serif;
-            box-sizing: border-box;
-            padding: 0; /* إزالة الحشو الداخلي لضمان التوسيط الصحيح */
-            line-height: normal;
-            vertical-align: middle;
+        .items-table td input {
+            width: 100%; height: 100%; border: none; outline: none;
+            background: transparent; font-size: 13px; font-weight: bold;
+            text-align: center; color: #000; font-family: Arial, sans-serif;
+            box-sizing: border-box; padding: 0; line-height: normal; vertical-align: middle;
         }
-        /* خط الوصف */
         .items-table td.prod-cell input { text-align: left; text-transform: capitalize; font-size: 12px !important; }
 
-        /* توزيع أعمدة الجدول */
         .items-table th:nth-child(1) { width: auto; }
         .items-table th:nth-child(2) { width: 2.35cm; }
         .items-table th:nth-child(3) { width: 1.80cm; }
         .items-table th:nth-child(4) { width: 1.65cm; }
         .items-table th:nth-child(5) { width: 5%; }
 
-        .qty-cell input { font-size: 14px !important; }
+        #invoiceRows .qty-cell input { font-size: 16px !important; }
+        #returnsRows .qty-cell input { font-size: 17px !important; }
 
-        .row-total {
-            font-size: 14px !important;
-            font-weight: 900 !important;
-            color: #000;
-            text-align: right !important;
-            padding-right: 8px;
+        .row-total { font-size: 14px !important; font-weight: 900 !important; color: #000; text-align: right !important; padding-right: 8px; }
+
+        .add-row-btn {
+            background: #17a2b8; color: white; border: none;
+            padding: 4px 10px; border-radius: 4px; cursor: pointer;
+            font-weight: bold; margin-bottom: 10px; font-size: 12px;
         }
 
-        .add-row-btn { background: #17a2b8; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 10px; font-size: 12px; }
-
-        /* الإجمالي الكلي */
         .totals-section { display: flex; justify-content: flex-start; margin-top: 8px; margin-bottom: 15px; direction: rtl; }
-        .total-box { 
-            border: 2px solid #000; padding: 8px 16px; border-radius: 6px; 
-            font-weight: bold; font-size: 14px; display: flex; gap: 15px; align-items: center; background: #fff;
-        }
-        .total-val { color: #d32f2f; font-size: 16px; font-weight: 900; text-align: right; }
 
-        /* التوقيعات */
-        .signatures-section { display: flex; justify-content: space-between; width: 100%; margin-top: 0.5cm; font-size: 13px; font-weight: bold; padding: 0 10px; direction: rtl; }
+        .total-box {
+            border: 2px solid #000; padding: 12px 18px;
+            border-radius: 6px; background: #fff;
+            min-width: 440px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .total-line {
+            display: grid;
+            grid-template-columns: 125px 1fr auto;
+            align-items: center;
+            gap: 8px;
+            direction: ltr;
+        }
+        .total-label-en {
+            font-size: 14px; color: #000; font-weight: bold;
+            font-family: Arial, sans-serif; white-space: nowrap;
+            text-align: left; direction: ltr;
+        }
+        .total-value-en {
+            color: #d32f2f; font-weight: 900; font-size: 15px;
+            font-family: Arial, sans-serif; white-space: nowrap;
+            text-align: right; direction: ltr;
+        }
+        .total-label-ar {
+            font-size: 15px; color: #000; font-weight: bold;
+            white-space: nowrap; font-family: 'Segoe UI', Arial, sans-serif;
+            text-align: right; direction: rtl;
+        }
+        .total-line.grand .total-label-en { font-size: 15px; }
+        .total-line.grand .total-label-ar { font-size: 16.5px; }
+        .grand-total-value { font-size: 17.6px !important; color: #d32f2f; font-weight: 900; }
+
+        #deliveryFeeInput {
+            width: 85px; border: none; border-bottom: 1.5px dotted #444;
+            font-size: 14.9px !important; font-weight: 900;
+            text-align: center; background: transparent; outline: none;
+            font-family: Arial, sans-serif; color: #d32f2f; padding: 0 4px;
+        }
+        #deliveryFeeInput:focus { border-bottom-style: solid; }
+
+        .signatures-section {
+            display: flex; justify-content: space-between; width: 100%;
+            margin-top: 0.5cm; font-size: 13px; font-weight: bold;
+            padding: 0 10px; direction: rtl;
+        }
         .sig-line { border-bottom: 1.5px dotted #333; width: 180px; display: inline-block; margin-right: 8px; }
 
-        /* المودال */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; }
-        .modal-content { background: white; width: 95%; max-width: 900px; max-height: 85vh; border-radius: 8px; padding: 25px; overflow-y: auto; text-align: right; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); display: none;
+            justify-content: center; align-items: center; z-index: 2000;
+        }
+        .modal-content {
+            background: white; width: 95%; max-width: 900px;
+            max-height: 85vh; border-radius: 8px; padding: 25px;
+            overflow-y: auto; text-align: right;
+        }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 12px; flex-wrap: wrap; border-bottom: 2px solid #ddd;
+            padding-bottom: 10px; margin-bottom: 15px;
+        }
+        .modal-header h3 { margin: 0; }
+        .modal-header .header-actions {
+            display: flex; gap: 8px; flex-wrap: wrap;
+        }
         .saved-table { width: 100%; border-collapse: collapse; font-size: 14px; }
         .saved-table th, .saved-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         .saved-table th { background: #f8f9fa; }
 
-        /* وضع PDF مطابق تماماً للعرض مع التعديلات المطلوبة */
-        .pdf-mode { padding: 0.6cm !important; box-shadow: none !important; border: 1px solid #000 !important; }
+        .statement-filters {
+            display: flex; gap: 12px; flex-wrap: wrap;
+            align-items: flex-end; margin-bottom: 20px;
+            padding: 15px; background: #f8f9fa; border-radius: 8px;
+        }
+        .statement-filters > div { display: flex; flex-direction: column; gap: 4px; }
+        .statement-filters label { font-size: 12px; font-weight: bold; color: #333; }
+        .statement-filters input, .statement-filters select {
+            padding: 8px 10px; border: 1px solid #ccc;
+            border-radius: 4px; font-size: 13px; font-family: inherit;
+            min-width: 160px;
+        }
+
+        #statementResultArea, #reportResultArea { padding: 8px; background: #fff; }
+
+        .statement-company-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding-bottom: 10px; border-bottom: 2px solid #000; margin-bottom: 15px;
+        }
+        .statement-company-header .sch-col { display: flex; flex-direction: column; gap: 2px; }
+        .statement-company-header .sch-right {
+            text-align: center; align-items: center;
+            font-size: 11px; font-weight: bold; color: #111;
+            line-height: 1.4; min-width: 130px;
+        }
+        .statement-company-header .sch-center {
+            text-align: center; align-items: center; flex: 1;
+        }
+        .statement-company-header .sch-left { min-width: 130px; }
+        .statement-company-header .sch-logo {
+            height: 55px; width: auto; object-fit: contain;
+        }
+        .statement-company-header .sch-brand {
+            font-size: 18px; font-weight: 900; letter-spacing: 1px;
+            color: #000; font-family: Arial, sans-serif; margin-top: 3px;
+        }
+        .statement-company-header .sch-qr { width: 55px; height: 55px; margin-top: 3px; }
+
+        .statement-title { text-align: center; margin: 12px 0 15px; }
+        .statement-title h2 {
+            font-size: 20px; font-weight: 900; color: #000;
+            font-family: Arial; letter-spacing: 1px;
+        }
+        .statement-title .sub {
+            font-size: 14px; color: #333; margin-top: 4px; font-weight: bold;
+        }
+
+        .statement-info {
+            display: flex; justify-content: space-between; flex-wrap: wrap;
+            gap: 10px; font-size: 13px; font-weight: bold; margin-bottom: 12px;
+            padding: 12px 15px; background: #fafafa; border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        .statement-customer-name { font-size: 18px; color: #d32f2f; font-weight: 900; }
+
+        .statement-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 15px; }
+        .statement-table th {
+            border: 1.2px solid #000; background: #333;
+            color: #fff; padding: 9px 6px; font-weight: bold;
+            text-align: center; font-size: 12px;
+        }
+        .statement-table td { border: 1px solid #999; padding: 8px 6px; text-align: center; }
+        .statement-table tr:nth-child(even) td { background: #f9f9f9; }
+        .statement-summary {
+            display: flex; flex-direction: column; gap: 5px;
+            padding: 12px 18px; background: #fff;
+            border: 2px solid #000; border-radius: 6px;
+            margin-left: auto; min-width: 340px; max-width: 400px;
+        }
+        .statement-summary .line {
+            display: flex; justify-content: space-between;
+            font-size: 14px; font-weight: bold;
+        }
+        .statement-summary .line.total {
+            border-top: 2px solid #000; padding-top: 6px;
+            margin-top: 4px; font-size: 16px;
+        }
+        .statement-summary .val { color: #d32f2f; font-weight: 900; direction: ltr; font-family: Arial, sans-serif; }
+
+        .pdf-mode { padding: 0.5cm !important; box-shadow: none !important; border: 2px solid #222 !important; }
         .pdf-mode .no-print { display: none !important; }
         .pdf-mode .dotted-input { border-bottom: 1.5px dotted #000 !important; }
-        
-        /* تعديلات PDF: زيادة ارتفاع الصفوف 10% و حجم الخطوط 15% */
-        .pdf-mode .items-table td {
-            height: 24px; /* زيادة الارتفاع بنسبة 10% تقريباً */
-            padding: 2px 4px; /* ضبط الحشو ليتناسب مع الارتفاع الجديد */
+        .pdf-mode #streetInput { border-bottom: 1.5px dotted #000 !important; }
+        .pdf-mode .items-table td { height: 24px; padding: 2px 4px; }
+        .pdf-mode .items-table td.prod-cell input { font-size: 13.8px !important; }
+        .pdf-mode #invoiceRows .qty-cell input { font-size: 18.5px !important; }
+        .pdf-mode #returnsRows .qty-cell input { font-size: 20px !important; }
+        .pdf-mode #deliveryFeeInput { font-size: 17.2px !important; width: 100px; }
+        .pdf-mode #areaInput { font-size: 17.5px !important; }
+        .pdf-mode .address-grid .dotted-input { font-size: 13.5px !important; }
+        .pdf-mode #streetInput { font-size: 17.5px !important; }
+        .pdf-mode #customerPhone { font-size: 18.7px !important; }
+
+        .password-input {
+            width: 100%; padding: 12px; font-size: 18px;
+            border: 2px solid #ccc; border-radius: 6px;
+            letter-spacing: 4px; text-align: center;
+            font-family: Arial; direction: ltr;
         }
-        .pdf-mode .items-table td.prod-cell input {
-            font-size: 13.8px !important; /* زيادة 15% لخط اسم الصنف */
+        .password-input:focus { outline: none; border-color: #17a2b8; }
+
+        /* توقيع المطور */
+        .signature-card {
+            position: fixed; bottom: 15px; left: 15px;
+            background: transparent; color: #1565c0;
+            padding: 7.9px 13.1px; border-radius: 6.4px;
+            box-shadow: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 0.6rem; font-weight: 600;
+            z-index: 1000;
+            animation: float 6s ease-in-out infinite;
+            transition: all 0.3s ease; cursor: pointer;
+            border: 2px solid #d32f2f;
+            text-decoration: none; display: inline-block;
         }
-        .pdf-mode .qty-cell input {
-            font-size: 16px !important; /* زيادة 15% لخط الكميات */
+        .signature-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 12px rgba(211, 47, 47, 0.5);
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+            100% { transform: translateY(0px); }
+        }
+        .signature-card .name {
+            font-size: 0.7125rem; font-weight: 700;
+            margin-bottom: 3px; color: #1565c0;
+        }
+        .signature-card .title {
+            font-size: 0.525rem; opacity: 0.95;
+            font-weight: 500; color: #1565c0;
+        }
+
+        /* تعديلات الموبايل والشاشات الصغيرة */
+        @media (max-width: 768px) {
+            body { padding-right: 15px !important; padding-top: 65px; }
+            .invoice-system { margin: 0 auto; }
+            
+            /* شريط الجوال العلوي */
+            .mobile-header-bar {
+                display: flex; position: fixed; top: 0; left: 0; right: 0;
+                height: 52px; background: #ffffff; box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+                z-index: 9998; align-items: center; justify-content: space-between; padding: 0 15px;
+            }
+            .mobile-title { font-weight: 900; font-size: 15px; color: #d32f2f; }
+            .mobile-menu-btn {
+                background: #17a2b8; color: white; border: none; padding: 7px 12px;
+                border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;
+                display: flex; align-items: center; gap: 5px;
+            }
+
+            /* تحويل الشريط الجانبي إلى درج منزلق (Drawer) */
+            .top-bar {
+                right: -270px; width: 260px; height: 100vh;
+                box-shadow: -5px 0 25px rgba(0,0,0,0.3);
+                background: #ffffff;
+            }
+            .top-bar.mobile-open {
+                right: 0;
+            }
+
+            /* خلفية معتمة عند فتح القائمة بالموبايل */
+            .mobile-backdrop {
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.5); z-index: 9997; display: none;
+            }
+            .top-bar.mobile-open ~ .mobile-backdrop {
+                display: block;
+            }
+
+            .signature-card {
+                position: relative; bottom: auto; left: auto;
+                margin: 20px auto 0; width: fit-content; animation: none;
+            }
         }
     </style>
 </head>
@@ -234,25 +484,64 @@
     <button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="exportBackup()">أخذ نسخة الآن</button>
 </div>
 
+<!-- شريط علوي يظهر فقط في الهواتف المحمولة -->
+<div class="mobile-header-bar no-print">
+    <div class="mobile-title">FONDANT CHOCO</div>
+    <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">
+        <span>☰ قائمة الخيارات</span>
+    </button>
+</div>
+
+<!-- خلفية معتمة للقائمة الجانبية في الجوال -->
+<div class="mobile-backdrop no-print" onclick="toggleMobileSidebar()"></div>
+
 <!-- الشريط الجانبي -->
-<div class="top-bar no-print">
-    <button class="btn btn-primary" id="saveAndExportBtn">💾 حفظ وتصدير PDF وتالي</button>
-    <button class="btn btn-success-dark" id="exportBackupBtn">💾 تصدير نسخة احتياطية</button>
-    <button class="btn btn-warning" onclick="document.getElementById('backupFileInput').click()">📂 استعادة نسخة احتياطية</button>
+<div class="top-bar no-print" id="sidebarMenu">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; padding-bottom: 8px; border-bottom: 1px solid #ddd;">
+        <span style="font-weight: bold; font-size: 13px; color: #333;">خيارات النظام</span>
+        <button class="btn btn-danger" style="width: auto; padding: 3px 8px; font-size: 11px;" onclick="toggleMobileSidebar()">إغلاق ✖</button>
+    </div>
+    <button class="btn btn-primary" onclick="toggleMobileSidebar(); document.getElementById('saveAndExportBtn').click();">💾 حفظ وتصدير PDF وتالي</button>
+    <button class="btn btn-info" onclick="toggleMobileSidebar(); document.getElementById('viewInvoicesBtn').click();">📂 الفواتير المحفوظة</button>
+    <button class="btn btn-purple" onclick="toggleMobileSidebar(); document.getElementById('statementBtn').click();">📊 كشف حساب عميل</button>
+    <button class="btn btn-purple" onclick="toggleMobileSidebar(); document.getElementById('reportBtn').click();">📈 تقرير الفواتير</button>
+    <button class="btn btn-info" onclick="toggleMobileSidebar(); document.getElementById('manageItemsBtn').click();">⚙️ إدارة أصناف المستشفيات</button>
+    <button class="btn btn-info" onclick="toggleMobileSidebar(); document.getElementById('manageExternalItemsBtn').click();">⚙️ إدارة الأصناف الخارجية</button>
+    <button class="btn btn-orange" onclick="toggleMobileSidebar(); document.getElementById('manageHospitalNamesBtn').click();">🏥 إدارة أسماء المستشفيات</button>
+    <button class="btn btn-orange" onclick="toggleMobileSidebar(); document.getElementById('manageExternalCustomersBtn').click();">🏢 إدارة العملاء الخارجيين</button>
+    <button class="btn btn-success-dark" onclick="toggleMobileSidebar(); document.getElementById('exportBackupBtn').click();">💾 تصدير نسخة احتياطية</button>
+    <button class="btn btn-warning" onclick="toggleMobileSidebar(); document.getElementById('backupFileInput').click();">📂 استعادة نسخة احتياطية</button>
     <input type="file" id="backupFileInput" style="display: none;" accept=".json" onchange="importBackup(event)">
-    <button class="btn btn-info" id="viewInvoicesBtn">📂 الفواتير المحفوظة</button>
-    <button class="btn btn-secondary" id="viewLogsBtn">📜 سجل الحركات</button>
-    <button class="btn btn-info" id="manageItemsBtn">⚙️ إدارة الأصناف</button>
-    <button class="btn btn-danger" id="clearInvoiceBtn">🗑️ إعادة تحميل الكل</button>
+    <button class="btn btn-secondary" onclick="toggleMobileSidebar(); document.getElementById('viewLogsBtn').click();">📜 سجل الحركات</button>
+    <button class="btn btn-danger" onclick="toggleMobileSidebar(); document.getElementById('clearInvoiceBtn').click();">🗑️ إعادة تحميل كل الاصناف للفاتورة</button>
+</div>
+
+<!-- أزرار حقيقية مخفية يتم تفعيلها من الشريط الجانبي أو قائمة الموبايل -->
+<div style="display:none;">
+    <button id="saveAndExportBtn">حفظ وتصدير</button>
+    <button id="viewInvoicesBtn">الفواتير المحفوظة</button>
+    <button id="statementBtn">كشف حساب</button>
+    <button id="reportBtn">تقرير</button>
+    <button id="manageItemsBtn">أصناف مستشفيات</button>
+    <button id="manageExternalItemsBtn">أصناف خارجية</button>
+    <button id="manageHospitalNamesBtn">أسماء مستشفيات</button>
+    <button id="manageExternalCustomersBtn">عملاء خارجيين</button>
+    <button id="exportBackupBtn">نسخة احتياطية</button>
+    <button id="viewLogsBtn">سجل الحركات</button>
+    <button id="clearInvoiceBtn">إعادة تحميل</button>
 </div>
 
 <div class="invoice-system">
+
+    <div class="invoice-type-nav no-print">
+        <button type="button" class="invoice-type-btn active" data-type="hospital">🏥 فاتورة المستشفيات</button>
+        <button type="button" class="invoice-type-btn" data-type="external">🚚 فاتورة خارجية</button>
+    </div>
+
     <div class="invoice-paper" id="invoiceContainer">
         <div class="invoice-content">
             
-            <!-- الجزء العلوي للفاتورة -->
             <div class="header-top-row">
-                <!-- العمود الأيمن: الفروع، الهواتف، الإنستغرام، الموقع، QR -->
                 <div class="header-right-side">
                     <div class="header-line">فرع أسواق القرين:</div>
                     <div class="header-line">6070 9931 - 6010 9932 📞💬</div>
@@ -261,13 +550,11 @@
                     <img src="https://i.postimg.cc/fLLx3hGx/instagram-QR-Code.png" alt="QR Code" class="qr-code-img">
                 </div>
                 
-                <!-- المنتصف: الشعار واسم البراند -->
                 <div class="header-center-logo">
                     <img src="https://i.postimg.cc/WbJw6TdV/Orig-LOGO-Square.jpg" alt="Logo" class="logo-img" onerror="this.src='https://placehold.co/80x80?text=FONDANT'">
                     <div class="brand-name">FONDANT CHOCO</div>
                 </div>
                 
-                <!-- العمود الأيسر: نوع الفاتورة ورقم الفاتورة (مقابل QR) -->
                 <div class="header-left-side">
                     <div class="header-line-left">فاتورة نقداً / بالحساب<br>Cash/Credit Invoice</div>
                     <div class="inv-no-badge" dir="ltr">
@@ -277,7 +564,6 @@
                 </div>
             </div>
 
-            <!-- بيانات العميل والعنوان -->
             <div class="fields-container">
                 <div class="field-line">
                     <span class="field-label">Mr./Mrs. :السيد / ة</span>
@@ -285,34 +571,26 @@
                         <input type="text" id="customerInput" class="dotted-input" placeholder="اختر/اكتب العميل...">
                         <div id="customerList" class="autocomplete-list"></div>
                     </div>
-
                     <span class="field-label" style="margin-right: 10px;">تليفون / Tel:</span>
-                    <input type="text" id="customerPhone" class="dotted-input" style="width: 130px; text-align: center;">
-
+                    <input type="text" id="customerPhone" class="dotted-input" style="width: 150px;">
                     <span class="field-label" style="margin-right: auto;">:تاريخ الطلب</span>
                     <input type="date" id="invoiceDate" class="dotted-input" style="width: 125px; text-align: center;">
                 </div>
 
-                <!-- سطر العنوان -->
                 <div class="field-line address-grid">
                     <span class="field-label">المنطقة / Area:</span>
-                    <input type="text" id="areaInput" class="dotted-input" style="text-align: right;">
-
+                    <input type="text" id="areaInput" class="dotted-input">
                     <span class="field-label">قطعة / Block:</span>
                     <input type="text" id="blockInput" class="dotted-input">
-
                     <span class="field-label">شارع / Street:</span>
-                    <input type="text" id="streetInput" class="dotted-input">
-
+                    <div id="streetInput" contenteditable="true" data-placeholder="اكتب الشارع..."></div>
                     <span class="field-label">جادة / Jeda:</span>
                     <input type="text" id="jedaInput" class="dotted-input">
-
                     <span class="field-label">منزل / Home:</span>
                     <input type="text" id="homeInput" class="dotted-input">
                 </div>
             </div>
 
-            <!-- جدول الأصناف الرئيسي -->
             <table class="items-table" id="itemsTable">
                 <thead>
                     <tr>
@@ -328,11 +606,9 @@
 
             <button type="button" class="add-row-btn no-print" id="addItemBtn">+ إضافة صنف إضافي</button>
 
-            <!-- فاصل بين الأصناف والمرتجعات -->
             <div style="margin-top: 15px; margin-bottom: 10px; border-top: 2px dashed #000;"></div>
             <div style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">المرتجعات / Returns</div>
 
-            <!-- جدول المرتجعات -->
             <table class="items-table returns-table" id="returnsTable">
                 <thead>
                     <tr>
@@ -345,19 +621,26 @@
             </table>
             <button type="button" class="add-row-btn no-print" id="addReturnBtn">+ إضافة صنف مرتجع</button>
 
-            <!-- الإجمالي الكلي على اليمين -->
             <div class="totals-section">
-                <div class="total-box" style="display: block; text-align: left; min-width: 220px;">
-                    <div style="font-size: 14px; margin-bottom: 3px;">
-                        Total Amount : <span class="total-val" id="grandTotalVal" style="font-size: 16px;">KD 0.000</span>
+                <div class="total-box">
+                    <div class="total-line" id="subTotalLine">
+                        <span class="total-label-en">Sub Total :</span>
+                        <span class="total-value-en">KD <span id="subTotalVal">0.000</span></span>
+                        <span class="total-label-ar">الاجمالي:</span>
                     </div>
-                    <div style="font-size: 14px; text-align: right; direction: rtl; font-weight: bold;">
-                        الإجمالي الكلي
+                    <div class="total-line" id="deliveryLine">
+                        <span class="total-label-en">Delivery :</span>
+                        <span class="total-value-en">KD <input type="text" id="deliveryFeeInput" inputmode="decimal" placeholder="0.000"></span>
+                        <span class="total-label-ar">توصيل:</span>
+                    </div>
+                    <div class="total-line grand">
+                        <span class="total-label-en">Total Amount :</span>
+                        <span class="total-value-en grand-total-value">KD <span id="grandTotalVal">0.000</span></span>
+                        <span class="total-label-ar">الإجمالي الكلي:</span>
                     </div>
                 </div>
             </div>
 
-            <!-- التوقيعات -->
             <div class="signatures-section">
                 <div>
                     اسم السائق المستلم:<br>
@@ -380,12 +663,13 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3>الفواتير المحفوظة</h3>
-            <button class="btn btn-danger" onclick="closeModal('savedInvoicesModal')">إغلاق ✖</button>
+            <button class="btn btn-danger" style="width: auto;" onclick="closeModal('savedInvoicesModal')">إغلاق ✖</button>
         </div>
         <table class="saved-table">
             <thead>
                 <tr>
                     <th>رقم الفاتورة</th>
+                    <th>النوع</th>
                     <th>التاريخ</th>
                     <th>العميل</th>
                     <th>الإجمالي</th>
@@ -397,12 +681,84 @@
     </div>
 </div>
 
+<!-- Modal كشف الحساب -->
+<div class="modal-overlay" id="statementModal">
+    <div class="modal-content" style="max-width: 1100px;">
+        <div class="modal-header">
+            <h3>📊 كشف حساب عميل / Customer Statement</h3>
+            <button class="btn btn-danger" style="width: auto;" onclick="closeModal('statementModal')">إغلاق ✖</button>
+        </div>
+        <div class="statement-filters no-print">
+            <div>
+                <label>العميل أو الموبايل / Customer or Phone:</label>
+                <input type="text" id="statementCustomer" list="allCustomersList" placeholder="اكتب اسم العميل أو رقم الموبايل...">
+                <datalist id="allCustomersList"></datalist>
+            </div>
+            <div>
+                <label>من تاريخ / From:</label>
+                <input type="date" id="statementFromDate">
+            </div>
+            <div>
+                <label>إلى تاريخ / To:</label>
+                <input type="date" id="statementToDate">
+            </div>
+            <button class="btn btn-primary" style="width: auto; padding: 8px 20px;" onclick="generateStatement()">🔍 عرض الكشف</button>
+            <button class="btn btn-success" style="width: auto; padding: 8px 20px;" onclick="exportStatementPDF()">📄 تصدير PDF</button>
+            <button class="btn btn-secondary" style="width: auto; padding: 8px 20px;" onclick="resetStatementFilters()">↻ تفريغ</button>
+        </div>
+        <div id="statementResultArea">
+            <div style="text-align: center; padding: 30px; color: #999; font-size: 14px;">
+                اختر العميل والفترة الزمنية ثم اضغط "🔍 عرض الكشف"
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تقرير الفواتير -->
+<div class="modal-overlay" id="reportModal">
+    <div class="modal-content" style="max-width: 1200px;">
+        <div class="modal-header">
+            <h3>📈 تقرير الفواتير / Invoices Report</h3>
+            <button class="btn btn-danger" style="width: auto;" onclick="closeModal('reportModal')">إغلاق ✖</button>
+        </div>
+        <div class="statement-filters no-print">
+            <div>
+                <label>من تاريخ / From:</label>
+                <input type="date" id="reportFromDate">
+            </div>
+            <div>
+                <label>إلى تاريخ / To:</label>
+                <input type="date" id="reportToDate">
+            </div>
+            <div>
+                <label>النوع / Type:</label>
+                <select id="reportTypeFilter">
+                    <option value="all">الكل / All</option>
+                    <option value="hospital">مستشفيات / Hospital</option>
+                    <option value="external">خارجية / External</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" style="width: auto; padding: 8px 20px;" onclick="generateReport()">🔍 عرض التقرير</button>
+            <button class="btn btn-success" style="width: auto; padding: 8px 20px;" onclick="exportReportPDF()">📄 تصدير PDF</button>
+            <button class="btn btn-secondary" style="width: auto; padding: 8px 20px;" onclick="resetReportFilters()">↻ تفريغ</button>
+        </div>
+        <div id="reportResultArea">
+            <div style="text-align: center; padding: 30px; color: #999; font-size: 14px;">
+                اختر الفترة الزمنية والنوع ثم اضغط "🔍 عرض التقرير"
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal سجل الحركات -->
 <div class="modal-overlay" id="logsModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>سجل الحركات</h3>
-            <button class="btn btn-danger" onclick="closeModal('logsModal')">إغلاق ✖</button>
+            <h3>سجل الحركات / Activity Log</h3>
+            <div class="header-actions">
+                <button class="btn btn-success" style="width: auto;" onclick="exportLogsPDF()">📄 تصدير PDF</button>
+                <button class="btn btn-danger" style="width: auto;" onclick="closeModal('logsModal')">إغلاق ✖</button>
+            </div>
         </div>
         <table class="saved-table">
             <thead>
@@ -421,11 +777,11 @@
 <div class="modal-overlay" id="itemsModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>إدارة الأصناف والأسعار</h3>
-            <div>
-                <button class="btn btn-primary" onclick="addItemToModal()">+ إضافة صنف</button>
-                <button class="btn btn-success" onclick="saveItemsModal()">💾 حفظ التعديلات</button>
-                <button class="btn btn-danger" onclick="closeModal('itemsModal')">إغلاق ✖</button>
+            <h3 id="itemsModalTitle" style="margin: 0;">إدارة الأصناف والأسعار</h3>
+            <div class="header-actions">
+                <button class="btn btn-primary" style="width: auto;" onclick="addItemToModal()">+ إضافة صنف</button>
+                <button class="btn btn-success" style="width: auto;" onclick="saveItemsModal()">💾 حفظ التعديلات</button>
+                <button class="btn btn-danger" style="width: auto;" onclick="closeModal('itemsModal')">إغلاق ✖</button>
             </div>
         </div>
         <table class="saved-table">
@@ -441,7 +797,125 @@
     </div>
 </div>
 
+<!-- Modal إدارة أسماء المستشفيات -->
+<div class="modal-overlay" id="hospitalNamesModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin: 0;">🏥 إدارة أسماء المستشفيات</h3>
+            <div class="header-actions">
+                <button class="btn btn-primary" style="width: auto;" onclick="addHospitalNameRow()">+ إضافة اسم</button>
+                <button class="btn btn-success" style="width: auto;" onclick="saveHospitalNames()">💾 حفظ</button>
+                <button class="btn btn-danger" style="width: auto;" onclick="closeModal('hospitalNamesModal')">إغلاق ✖</button>
+            </div>
+        </div>
+        <table class="saved-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;">#</th>
+                    <th>اسم المستشفى</th>
+                    <th style="width: 15%;">إجراء</th>
+                </tr>
+            </thead>
+            <tbody id="hospitalNamesList"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal إدارة العملاء الخارجيين - عرض كل البيانات -->
+<div class="modal-overlay" id="externalCustomersModal">
+    <div class="modal-content" style="max-width: 1300px;">
+        <div class="modal-header">
+            <h3 style="margin: 0;">🏢 إدارة العملاء الخارجيين (كل البيانات)</h3>
+            <div class="header-actions">
+                <button class="btn btn-primary" style="width: auto;" onclick="addExternalCustomerRow()">+ إضافة</button>
+                <button class="btn btn-success" style="width: auto;" onclick="saveExternalCustomers()">💾 حفظ</button>
+                <button class="btn btn-info" style="width: auto;" onclick="syncExternalFromInvoices()">↻ تحديث من الفواتير</button>
+                <button class="btn btn-danger" style="width: auto;" onclick="closeModal('externalCustomersModal')">إغلاق ✖</button>
+            </div>
+        </div>
+        <p style="font-size:12px; color:#666; margin-bottom:10px;">
+            ملاحظة: عند إدخال رقم موبايل في الفاتورة سيتم البحث تلقائياً وإظهار كل بيانات العميل إذا كانت محفوظة.
+        </p>
+        <div style="overflow-x: auto;">
+            <table class="saved-table" style="min-width: 1200px;">
+                <thead>
+                    <tr>
+                        <th style="width: 4%;">#</th>
+                        <th style="width: 15%;">اسم العميل</th>
+                        <th style="width: 11%;">الموبايل</th>
+                        <th style="width: 12%;">المنطقة</th>
+                        <th style="width: 8%;">قطعة</th>
+                        <th style="width: 22%;">الشارع</th>
+                        <th style="width: 8%;">جادة</th>
+                        <th style="width: 8%;">منزل</th>
+                        <th style="width: 8%;">إجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="externalCustomersList"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal كلمة المرور -->
+<div class="modal-overlay" id="passwordModal">
+    <div class="modal-content" style="max-width: 420px;">
+        <div class="modal-header">
+            <h3 id="passwordModalTitle">🔒 كلمة المرور</h3>
+        </div>
+        <div style="padding: 10px 0;">
+            <input type="password" id="passwordModalInput" class="password-input" placeholder="••••••" autocomplete="off">
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+            <button class="btn btn-primary" style="width: auto; padding: 10px 24px;" onclick="submitPasswordModal()">تأكيد</button>
+            <button class="btn btn-secondary" style="width: auto; padding: 10px 24px;" onclick="closeModal('passwordModal')">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<!-- توقيع المطور -->
+<a href="https://yasser-q8.github.io/myprofile/#" class="signature-card" target="_blank" rel="noopener noreferrer">
+    <div class="name">Yasser Elkhateeb</div>
+    <div class="title">مطور البرنامج 67011143</div>
+</a>
+
 <script>
+    // دالة فتح وإغلاق قائمة الجوال الجانبية
+    function toggleMobileSidebar() {
+        const sidebar = document.getElementById('sidebarMenu');
+        sidebar.classList.toggle('mobile-open');
+    }
+
+    function openModal(id) {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+        document.getElementById(id).style.display = 'flex';
+    }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    let _pwCallback = null;
+    let _pwExpected = '';
+    function requestPassword(title, expected, callback) {
+        _pwExpected = expected; _pwCallback = callback;
+        document.getElementById('passwordModalTitle').innerText = '🔒 ' + title;
+        document.getElementById('passwordModalInput').value = '';
+        openModal('passwordModal');
+        setTimeout(() => document.getElementById('passwordModalInput').focus(), 100);
+    }
+    function submitPasswordModal() {
+        const val = document.getElementById('passwordModalInput').value;
+        if (val === _pwExpected) {
+            closeModal('passwordModal');
+            const cb = _pwCallback; _pwCallback = null; if (cb) cb();
+        } else {
+            alert('كلمة المرور غير صحيحة!');
+            document.getElementById('passwordModalInput').value = '';
+            document.getElementById('passwordModalInput').focus();
+        }
+    }
+    document.getElementById('passwordModalInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); submitPasswordModal(); }
+    });
+
     function getExpectedNextInvoiceNumber() {
         let savedInvoices = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
         if (savedInvoices.length > 0) {
@@ -452,16 +926,14 @@
     }
 
     let currentInvoiceNum = getExpectedNextInvoiceNumber();
+    let editingInvoiceNumber = null;
     const invoiceNumberInput = document.getElementById('invoiceNumberInput');
     invoiceNumberInput.value = currentInvoiceNum;
 
     invoiceNumberInput.addEventListener('input', function() {
-        if (this.value) {
-            currentInvoiceNum = parseInt(this.value) || currentInvoiceNum;
-        }
+        if (this.value) currentInvoiceNum = parseInt(this.value) || currentInvoiceNum;
     });
 
-    // نظام التحقق من النسخة الاحتياطية كل ساعتين
     function checkBackupReminder() {
         const lastBackup = localStorage.getItem('fondant_last_backup_time');
         const twoHours = 2 * 60 * 60 * 1000;
@@ -472,13 +944,16 @@
         }
     }
 
-    // تصدير نسخة احتياطية
     function exportBackup() {
         const backupData = {
             last_inv_num: currentInvoiceNum,
             saved_invoices: localStorage.getItem('fondant_saved_invoices'),
             logs: localStorage.getItem('fondant_logs'),
             items: localStorage.getItem('fondant_items'),
+            external_items: localStorage.getItem('fondant_external_items'),
+            hospital_customers: localStorage.getItem('fondant_hospital_customers'),
+            external_customers: localStorage.getItem('fondant_external_customers'),
+            external_customers_meta: localStorage.getItem('fondant_external_customers_meta'),
             backup_time: Date.now()
         };
         const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
@@ -493,9 +968,6 @@
         alert("تم تحميل النسخة الاحتياطية بنجاح!");
     }
 
-    document.getElementById('exportBackupBtn').addEventListener('click', exportBackup);
-
-    // استعادة نسخة احتياطية
     function importBackup(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -507,24 +979,45 @@
                 if (data.saved_invoices) localStorage.setItem('fondant_saved_invoices', data.saved_invoices);
                 if (data.logs) localStorage.setItem('fondant_logs', data.logs);
                 if (data.items) localStorage.setItem('fondant_items', data.items);
+                if (data.external_items) localStorage.setItem('fondant_external_items', data.external_items);
+                if (data.hospital_customers) localStorage.setItem('fondant_hospital_customers', data.hospital_customers);
+                if (data.external_customers) localStorage.setItem('fondant_external_customers', data.external_customers);
+                if (data.external_customers_meta) localStorage.setItem('fondant_external_customers_meta', data.external_customers_meta);
                 localStorage.setItem('fondant_last_backup_time', Date.now());
                 alert("تم استعادة النسخة الاحتياطية بنجاح! سيتم تحديث الصفحة الآن.");
                 location.reload();
-            } catch (err) {
-                alert("ملف النسخة الاحتياطية غير صالح أو تالف.");
-            }
+            } catch (err) { alert("ملف النسخة الاحتياطية غير صالح أو تالف."); }
         };
         reader.readAsText(file);
     }
 
     function toCapitalTitleCase(str) {
         if (!str) return '';
-        return str.toLowerCase().replace(/(?:^|\s|-)\w/g, function(match) {
-            return match.toUpperCase();
-        });
+        return str.toLowerCase().replace(/(?:^|\s|-)\w/g, function(match) { return match.toUpperCase(); });
     }
 
-    // الأصناف الافتراضية
+    const defaultHospitalCustomers = [
+        "ADAN", "JAHRA", "AL RAZI", "HYA", "HICHAM", "AHMAD", "NBK", 
+        "PHSYALOGY", "HIE UNIVERSITY", "HEALTH SCIENCE", "TECHNOLOGH GIRLS", 
+        "NEW RAZI", "EDMAN", "M OF HEALTH", "AL OMOMA"
+    ];
+
+    function loadHospitalCustomers() {
+        const stored = localStorage.getItem('fondant_hospital_customers');
+        if (stored) { try { const arr = JSON.parse(stored); if (Array.isArray(arr) && arr.length) return arr; } catch(e){} }
+        return defaultHospitalCustomers;
+    }
+
+    let hospitalCustomersDB = loadHospitalCustomers().map(c => toCapitalTitleCase(c));
+    let externalCustomersDB = [];
+
+    function loadExternalCustomersMeta() {
+        const stored = localStorage.getItem('fondant_external_customers_meta');
+        if (stored) { try { const arr = JSON.parse(stored); if (Array.isArray(arr)) return arr; } catch(e){} }
+        return [];
+    }
+    let externalCustomersMeta = loadExternalCustomersMeta();
+
     const defaultItemsDB = [
         { name: "SWEET GRAHAM", price: 0.600 },
         { name: "HALLOM CROLL SANDWITCH", price: 0.500 },
@@ -550,65 +1043,136 @@
         { name: "TIRAMISU CHEESECAKE", price: 0.500 }
     ];
 
-    function loadItemsDB() {
-        const stored = localStorage.getItem('fondant_items');
-        if (stored) {
-            return JSON.parse(stored);
-        }
-        return defaultItemsDB;
-    }
-
-    let itemsDB = loadItemsDB().map(i => ({
-        name: toCapitalTitleCase(i.name),
-        price: i.price
-    }));
-
-    const rawCustomersDB = [
-        "ADAN", "JAHRA", "AL RAZI", "HYA", "HICHAM", "AHMAD", "NBK", 
-        "PHSYALOGY", "HIE UNIVERSITY", "HEALTH SCIENCE", "TECHNOLOGH GIRLS", 
-        "NEW RAZI", "EDMAN", "M OF HEALTH", "AL OMOMA"
+    const defaultExternalItemsDB = [
+        { name: "Kinder Croll - كرول كندر", price: 2.000 },
+        { name: "Mini Mix Pies - فطاير ميني ميكس", price: 5.500 },
+        { name: "Belgian Chocolaaa - شوكولاتة بلجيكية", price: 6.750 },
+        { name: "Broken Chocolate - شوكليت مكسر", price: 7.500 },
+        { name: "Donut Choco Berry - دونت شوكو بيري", price: 9.500 },
+        { name: "Swiss Chocolate Box - شوكولا سويسريه", price: 9.750 },
+        { name: "Nutella Croll - كرول نوتيلا", price: 2.000 },
+        { name: "Taco Mix Box - تاكو ميكس بوكي", price: 8.000 }
     ];
 
-    const customersDB = rawCustomersDB.map(c => toCapitalTitleCase(c));
+    function loadHospitalItemsDB() {
+        const stored = localStorage.getItem('fondant_items');
+        if (stored) return JSON.parse(stored);
+        return defaultItemsDB;
+    }
+    function loadExternalItemsDB() {
+        const stored = localStorage.getItem('fondant_external_items');
+        if (stored) return JSON.parse(stored);
+        return defaultExternalItemsDB;
+    }
+
+    let hospitalItemsDB = loadHospitalItemsDB().map(i => ({ name: toCapitalTitleCase(i.name), price: i.price }));
+    let externalItemsDB = loadExternalItemsDB().map(i => ({ name: toCapitalTitleCase(i.name), price: i.price }));
+
+    let invoiceType = 'hospital';
+    let currentItemsModalMode = 'hospital';
+
+    function getActiveItemsDB() { return invoiceType === 'external' ? externalItemsDB : hospitalItemsDB; }
+    function getActiveCustomersDB() { return invoiceType === 'external' ? externalCustomersDB : hospitalCustomersDB; }
+    function getItemsByMode(mode) { return mode === 'external' ? externalItemsDB : hospitalItemsDB; }
 
     const invoiceDateInput = document.getElementById('invoiceDate');
     const customerInput = document.getElementById('customerInput');
     const customerList = document.getElementById('customerList');
+    const customerPhone = document.getElementById('customerPhone');
     const invoiceRows = document.getElementById('invoiceRows');
     const returnsRows = document.getElementById('returnsRows');
+    const streetInput = document.getElementById('streetInput');
 
     const today = new Date().toISOString().split('T')[0];
     invoiceDateInput.value = today;
 
+    streetInput.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        document.execCommand('insertText', false, text);
+    });
+
     customerInput.addEventListener('input', function() {
         this.value = toCapitalTitleCase(this.value);
+        if (invoiceType === 'external') { customerList.style.display = 'none'; return; }
         const val = this.value.toLowerCase();
         customerList.innerHTML = '';
         if(!val) { customerList.style.display = 'none'; return; }
-        const matches = customersDB.filter(c => c.toLowerCase().includes(val));
+        const sourceList = getActiveCustomersDB();
+        const matches = sourceList.filter(c => c.toLowerCase().includes(val));
         if(matches.length) {
             matches.forEach(m => {
                 const div = document.createElement('div');
                 div.className = 'autocomplete-item';
                 div.innerText = m;
-                div.onclick = () => {
-                    customerInput.value = m;
-                    customerList.style.display = 'none';
-                };
+                div.onclick = () => { customerInput.value = m; customerList.style.display = 'none'; };
                 customerList.appendChild(div);
             });
             customerList.style.display = 'block';
-        } else { customerList.style.display = 'none'; }
+        } else customerList.style.display = 'none';
     });
 
-    // دالة مساعدة لإعداد الإكمال التلقائي
-    function initAutocomplete(inputElement, listElement, onSelectCallback) {
+    customerInput.addEventListener('focus', function() {
+        if (invoiceType === 'external') { customerList.style.display = 'none'; return; }
+        const sourceList = getActiveCustomersDB();
+        const val = this.value.toLowerCase();
+        customerList.innerHTML = '';
+        const matches = val ? sourceList.filter(c => c.toLowerCase().includes(val)) : sourceList;
+        if(matches.length) {
+            matches.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.innerText = m;
+                div.onclick = () => { customerInput.value = m; customerList.style.display = 'none'; };
+                customerList.appendChild(div);
+            });
+            customerList.style.display = 'block';
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#customerInput') && !e.target.closest('#customerList')) {
+            customerList.style.display = 'none';
+        }
+    });
+
+    customerPhone.addEventListener('blur', function() {
+        const phone = this.value.trim();
+        if (!phone) return;
+
+        const foundMeta = externalCustomersMeta.find(c => c.phone === phone);
+        if (foundMeta) {
+            if (!customerInput.value.trim()) customerInput.value = foundMeta.name || '';
+            if (!document.getElementById('areaInput').value) document.getElementById('areaInput').value = foundMeta.area || '';
+            if (!document.getElementById('blockInput').value) document.getElementById('blockInput').value = foundMeta.block || '';
+            if (!streetInput.innerText.trim()) streetInput.innerText = foundMeta.street || '';
+            if (!document.getElementById('jedaInput').value) document.getElementById('jedaInput').value = foundMeta.jeda || '';
+            if (!document.getElementById('homeInput').value) document.getElementById('homeInput').value = foundMeta.home || '';
+            addLogEntry(`تم تعبئة بيانات العميل تلقائياً برقم الموبايل ( ${phone} )`, false);
+            return;
+        }
+
+        const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+        const matched = saved.filter(inv => (inv.phone || '').trim() === phone);
+        if (matched.length) {
+            const last = matched[matched.length - 1];
+            if (!customerInput.value.trim()) customerInput.value = last.customer || '';
+            if (!document.getElementById('areaInput').value) document.getElementById('areaInput').value = last.area || '';
+            if (!document.getElementById('blockInput').value) document.getElementById('blockInput').value = last.block || '';
+            if (!streetInput.innerText.trim()) streetInput.innerText = last.street || '';
+            if (!document.getElementById('jedaInput').value) document.getElementById('jedaInput').value = last.jeda || '';
+            if (!document.getElementById('homeInput').value) document.getElementById('homeInput').value = last.home || '';
+            addLogEntry(`تم تعبئة بيانات العميل تلقائياً برقم الموبايل ( ${phone} )`, false);
+        }
+    });
+
+    function initAutocomplete(inputElement, listElement, onSelectCallback, sourceDB = getActiveItemsDB()) {
         inputElement.addEventListener('input', function() {
             this.value = toCapitalTitleCase(this.value);
             const val = this.value.toLowerCase();
             listElement.innerHTML = '';
             if(!val) { listElement.style.display = 'none'; return; }
-            const matches = itemsDB.filter(i => i.name.toLowerCase().includes(val));
+            const matches = sourceDB.filter(i => i.name.toLowerCase().includes(val));
             if(matches.length) {
                 matches.forEach(item => {
                     const div = document.createElement('div');
@@ -622,7 +1186,7 @@
                     listElement.appendChild(div);
                 });
                 listElement.style.display = 'block';
-            } else { listElement.style.display = 'none'; }
+            } else listElement.style.display = 'none';
         });
     }
 
@@ -630,7 +1194,6 @@
         const rowId = Date.now() + Math.random().toString().substr(2, 4);
         const tr = document.createElement('tr');
         tr.id = `row-${rowId}`;
-        
         const prodName = itemData ? toCapitalTitleCase(itemData.name) : '';
         const prodPrice = itemData ? parseFloat(itemData.price).toFixed(3) : '0.000';
         const prodQty = itemData && itemData.qty !== undefined ? itemData.qty : '';
@@ -644,11 +1207,8 @@
             <td><input type="number" class="price-input" value="${prodPrice}" step="0.001"></td>
             <td class="qty-cell"><input type="number" class="qty-input" value="${prodQty}" min="1" placeholder=""></td>
             <td class="row-total">${prodTotal}</td>
-            <td class="no-print">
-                <button class="btn-danger" style="padding:4px 8px; border-radius:3px; font-size:12px;" onclick="document.getElementById('row-${rowId}').remove(); updateGrandTotal();">✖</button>
-            </td>
+            <td class="no-print"><button class="btn-danger" style="padding:4px 8px; border-radius:3px; font-size:12px;" onclick="document.getElementById('row-${rowId}').remove(); updateGrandTotal();">✖</button></td>
         `;
-
         invoiceRows.appendChild(tr);
 
         const prodInput = tr.querySelector('.prod-input');
@@ -664,24 +1224,16 @@
         priceInput.addEventListener('input', () => calculateRowTotal(tr));
         qtyInput.addEventListener('input', () => calculateRowTotal(tr));
 
-        // التنقل بالأسهم لأعلى وأسفل في عمود الكمية
         qtyInput.addEventListener('keydown', function(e) {
             const rows = Array.from(document.querySelectorAll('#invoiceRows tr'));
             const currentIndex = rows.indexOf(tr);
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                if (currentIndex < rows.length - 1) {
-                    rows[currentIndex + 1].querySelector('.qty-input').focus();
-                } else {
-                    createRowElement();
-                    const newRows = Array.from(document.querySelectorAll('#invoiceRows tr'));
-                    newRows[newRows.length - 1].querySelector('.qty-input').focus();
-                }
+                if (currentIndex < rows.length - 1) rows[currentIndex + 1].querySelector('.qty-input').focus();
+                else { createRowElement(); const nr = Array.from(document.querySelectorAll('#invoiceRows tr')); nr[nr.length - 1].querySelector('.qty-input').focus(); }
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
-                if (currentIndex > 0) {
-                    rows[currentIndex - 1].querySelector('.qty-input').focus();
-                }
+                if (currentIndex > 0) rows[currentIndex - 1].querySelector('.qty-input').focus();
             }
         });
 
@@ -692,7 +1244,6 @@
         const rowId = Date.now() + Math.random().toString().substr(2, 4);
         const tr = document.createElement('tr');
         tr.id = `return-row-${rowId}`;
-        
         const prodName = itemData ? toCapitalTitleCase(itemData.name) : '';
         const prodQty = itemData && itemData.qty !== undefined ? itemData.qty : '';
 
@@ -702,16 +1253,12 @@
                 <div class="autocomplete-list prod-list"></div>
             </td>
             <td class="qty-cell"><input type="number" class="qty-input" value="${prodQty}" min="1" placeholder=""></td>
-            <td class="no-print">
-                <button class="btn-danger" style="padding:4px 8px; border-radius:3px; font-size:12px;" onclick="document.getElementById('return-row-${rowId}').remove();">✖</button>
-            </td>
+            <td class="no-print"><button class="btn-danger" style="padding:4px 8px; border-radius:3px; font-size:12px;" onclick="document.getElementById('return-row-${rowId}').remove();">✖</button></td>
         `;
-
         returnsRows.appendChild(tr);
 
         const prodInput = tr.querySelector('.prod-input');
         const prodList = tr.querySelector('.prod-list');
-
         initAutocomplete(prodInput, prodList, null);
     }
 
@@ -719,33 +1266,78 @@
         const price = parseFloat(row.querySelector('.price-input').value) || 0;
         const qtyStr = row.querySelector('.qty-input').value.trim();
         const qty = qtyStr === '' ? 0 : (parseFloat(qtyStr) || 0);
-        const total = price * qty;
-        row.querySelector('.row-total').innerText = total.toFixed(3);
+        row.querySelector('.row-total').innerText = (price * qty).toFixed(3);
         updateGrandTotal();
     }
 
+    function getDeliveryFee() {
+        const val = document.getElementById('deliveryFeeInput').value.trim();
+        return parseFloat(val) || 0;
+    }
+
     function updateGrandTotal() {
-        let grand = 0;
-        document.querySelectorAll('#invoiceRows .row-total').forEach(el => grand += parseFloat(el.innerText) || 0);
-        document.getElementById('grandTotalVal').innerText = 'KD ' + grand.toFixed(3);
+        let itemsTotal = 0;
+        document.querySelectorAll('#invoiceRows .row-total').forEach(el => { itemsTotal += parseFloat(el.innerText) || 0; });
+        let delivery = 0;
+        if (invoiceType === 'external') delivery = getDeliveryFee();
+        const grand = itemsTotal + delivery;
+        document.getElementById('subTotalVal').innerText = itemsTotal.toFixed(3);
+        document.getElementById('grandTotalVal').innerText = grand.toFixed(3);
+    }
+
+    function updateInvoiceTypeUI() {
+        document.querySelectorAll('.invoice-type-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.type === invoiceType);
+        });
+        const subTotalLine = document.getElementById('subTotalLine');
+        const deliveryLine = document.getElementById('deliveryLine');
+        if (invoiceType === 'external') {
+            subTotalLine.style.display = 'grid';
+            deliveryLine.style.display = 'grid';
+        } else {
+            subTotalLine.style.display = 'none';
+            deliveryLine.style.display = 'none';
+            document.getElementById('deliveryFeeInput').value = '';
+        }
+        updateGrandTotal();
+    }
+
+    function switchInvoiceType(newType) {
+        if (newType === invoiceType) return;
+        invoiceType = newType;
+        editingInvoiceNumber = null;
+        updateInvoiceTypeUI();
+        invoiceRows.innerHTML = '';
+        returnsRows.innerHTML = '';
+        customerInput.value = '';
+        document.getElementById('deliveryFeeInput').value = '';
+        populateAllDefaultItems();
+        updateGrandTotal();
+        addLogEntry(`تم التبديل إلى ${newType === 'external' ? 'فاتورة خارجية' : 'فاتورة المستشفيات'}.`, false);
     }
 
     function populateAllDefaultItems() {
         invoiceRows.innerHTML = '';
-        itemsDB.forEach(item => {
-            createRowElement({
-                name: item.name,
-                price: item.price,
-                qty: ''
-            });
-        });
+        getActiveItemsDB().forEach(item => { createRowElement({ name: item.name, price: item.price, qty: '' }); });
         updateGrandTotal();
     }
 
     document.getElementById('addItemBtn').addEventListener('click', () => createRowElement());
     document.getElementById('addReturnBtn').addEventListener('click', () => createReturnRowElement());
 
-    // السجل حتى 500 حركة مع دعم تلوين تغيير التسلسل بالأحمر
+    document.querySelectorAll('.invoice-type-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchInvoiceType(btn.dataset.type));
+    });
+
+    const deliveryFeeInput = document.getElementById('deliveryFeeInput');
+    deliveryFeeInput.addEventListener('input', updateGrandTotal);
+    deliveryFeeInput.addEventListener('blur', function() {
+        const val = parseFloat(this.value);
+        if (!isNaN(val)) this.value = val.toFixed(3);
+        else this.value = '';
+        updateGrandTotal();
+    });
+
     function addLogEntry(actionDetails, isHtml = false) {
         let logs = JSON.parse(localStorage.getItem('fondant_logs') || '[]');
         const timeStamp = new Date().toLocaleString('en-GB', { hour12: false });
@@ -755,53 +1347,127 @@
     }
 
     document.getElementById('viewLogsBtn').addEventListener('click', () => {
-        const tbody = document.getElementById('logsList');
-        const logs = JSON.parse(localStorage.getItem('fondant_logs') || '[]');
-        tbody.innerHTML = '';
-        if(!logs.length) tbody.innerHTML = '<tr><td colspan="3">لا توجد حركات مسجلة.</td></tr>';
-        else {
-            logs.forEach((l, idx) => {
-                const row = tbody.insertRow();
-                row.insertCell(0).innerText = idx + 1;
-                row.insertCell(1).innerText = l.time;
-                const textCell = row.insertCell(2);
-                if (l.html) {
-                    textCell.innerHTML = l.text;
-                } else {
-                    textCell.innerText = l.text;
-                }
-            });
-        }
-        document.getElementById('logsModal').style.display = 'flex';
+        requestPassword('أدخل كلمة المرور لسجل الحركات', '123321', () => {
+            const tbody = document.getElementById('logsList');
+            const logs = JSON.parse(localStorage.getItem('fondant_logs') || '[]');
+            tbody.innerHTML = '';
+            if(!logs.length) tbody.innerHTML = '<tr><td colspan="3">لا توجد حركات مسجلة.</td></tr>';
+            else {
+                logs.forEach((l, idx) => {
+                    const row = tbody.insertRow();
+                    row.insertCell(0).innerText = idx + 1;
+                    row.insertCell(1).innerText = l.time;
+                    const textCell = row.insertCell(2);
+                    if (l.html) textCell.innerHTML = l.text;
+                    else textCell.innerText = l.text;
+                });
+            }
+            openModal('logsModal');
+        });
     });
 
-    // حفظ وتصدير الفاتورة
+    async function exportLogsPDF() {
+        const logs = JSON.parse(localStorage.getItem('fondant_logs') || '[]');
+        if (!logs.length) { alert('لا توجد حركات لتصديرها.'); return; }
+        let rowsHTML = '';
+        logs.forEach((l, idx) => {
+            const text = l.html ? l.text.replace(/<[^>]+>/g, '') : l.text;
+            rowsHTML += `<tr><td style="width:6%;">${idx + 1}</td><td style="width:26%;">${l.time}</td><td style="width:68%; text-align:right;">${text}</td></tr>`;
+        });
+        const html = `
+            <div style="text-align:center; padding-bottom:10px; border-bottom:2px solid #000; margin-bottom:15px;">
+                <h2 style="font-family:Arial; letter-spacing:1px; margin:0;">FONDANT CHOCO</h2>
+                <div style="margin-top:6px; font-size:14px; font-weight:bold;">سجل الحركات / Activity Log</div>
+                <div style="margin-top:4px; font-size:11px; color:#555;">تم التصدير في: ${new Date().toLocaleString('en-GB')}</div>
+            </div>
+            <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+                <thead><tr>
+                    <th style="border:1px solid #000; padding:7px; background:#333; color:#fff;">#</th>
+                    <th style="border:1px solid #000; padding:7px; background:#333; color:#fff;">Time / التاريخ</th>
+                    <th style="border:1px solid #000; padding:7px; background:#333; color:#fff;">Action / الحركة</th>
+                </tr></thead>
+                <tbody>${rowsHTML}</tbody>
+            </table>
+            <div style="margin-top:15px; text-align:center; font-size:11px; color:#888;">إجمالي الحركات: ${logs.length}</div>
+        `;
+        await exportHTMLToPDF(html, `Logs_${new Date().toISOString().split('T')[0]}.pdf`);
+        addLogEntry('تم تصدير سجل الحركات PDF.', false);
+    }
+
+    async function exportHTMLToPDF(html, filename) {
+        const temp = document.createElement('div');
+        temp.style.cssText = `position:fixed; left:-10000px; top:0; width:210mm; background:#fff; padding:15mm; font-family:'Segoe UI',Arial,sans-serif; direction:rtl; box-sizing:border-box;`;
+        temp.innerHTML = html;
+        document.body.appendChild(temp);
+        try {
+            const imgs = temp.querySelectorAll('img');
+            await Promise.all(Array.from(imgs).map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(res => { img.onload = res; img.onerror = res; });
+            }));
+            await new Promise(r => setTimeout(r, 150));
+            const canvas = await html2canvas(temp, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            const pageW = 210, pageH = 297;
+            const imgHeight = (canvas.height * pageW) / canvas.width;
+            if (imgHeight <= pageH) {
+                pdf.addImage(imgData, 'JPEG', 0, 0, pageW, imgHeight);
+            } else {
+                let remaining = imgHeight, pos = 0;
+                while (remaining > 0) {
+                    pdf.addImage(imgData, 'JPEG', 0, pos, pageW, imgHeight);
+                    remaining -= pageH; pos -= pageH;
+                    if (remaining > 0) pdf.addPage();
+                }
+            }
+            pdf.save(filename);
+        } catch(err) { alert('حدث خطأ أثناء التصدير.'); }
+        finally { document.body.removeChild(temp); }
+    }
+
     document.getElementById('saveAndExportBtn').addEventListener('click', async function() {
         if(!customerInput.value.trim()) { alert("يرجى إدخال اسم العميل أولاً."); return; }
 
         let hasValidQty = false;
         document.querySelectorAll('#invoiceRows tr').forEach(tr => {
             const qtyVal = tr.querySelector('.qty-input').value.trim();
-            if (qtyVal !== '' && parseFloat(qtyVal) > 0) {
-                hasValidQty = true;
-            }
+            if (qtyVal !== '' && parseFloat(qtyVal) > 0) hasValidQty = true;
         });
-
         if (!hasValidQty) {
             alert("لا يمكن حفظ وتصدير الفاتورة إلا بعد إدخال كمية لصنف واحد على الأقل.");
             return;
         }
 
+        if (invoiceType === 'external') {
+            const currentFee = parseFloat(deliveryFeeInput.value) || 0;
+            if (currentFee <= 0) {
+                const proceed = confirm('⚠️ لم يتم تسجيل رسوم توصيل في الفاتورة الخارجية.\n\nاضغط "موافق" للتجاوز والمتابعة بدون رسوم،\nأو "إلغاء" للرجوع وتسجيل الرسوم.');
+                if (!proceed) {
+                    deliveryFeeInput.focus();
+                    return;
+                }
+            } else {
+                deliveryFeeInput.value = currentFee.toFixed(3);
+            }
+        }
+
         const invNum = currentInvoiceNum;
         const custName = customerInput.value.trim();
+        const phoneVal = customerPhone.value.trim();
         const grandTotal = document.getElementById('grandTotalVal').innerText;
-
+        const deliveryFee = invoiceType === 'external' ? getDeliveryFee() : 0;
         const expectedNext = getExpectedNextInvoiceNumber();
         const isSequenceChanged = parseInt(invNum) !== expectedNext;
 
-        let logText = `تم حفظ وتصدير فاتورة رقم [ ${invNum} ] للعميل ( ${custName} ) بقيمة ${grandTotal}`;
-        if (isSequenceChanged) {
-            logText = `<span style="color: red; font-weight: bold;">⚠️ تم تغيير تسلسل الفاتورة يدوياً إلى [ ${invNum} ] - وتم حفظ وتصدير الفاتورة للعميل ( ${custName} ) بقيمة ${grandTotal}</span>`;
+        let savedInvoices = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+        if (editingInvoiceNumber !== null) {
+            savedInvoices = savedInvoices.filter(i => parseInt(i.number) !== parseInt(editingInvoiceNumber));
+        }
+        if (savedInvoices.some(i => parseInt(i.number) === parseInt(invNum))) {
+            alert(`⚠️ رقم الفاتورة ${invNum} موجود مسبقاً.`);
+            return;
         }
 
         let items = [];
@@ -818,29 +1484,56 @@
         document.querySelectorAll('#returnsRows tr').forEach(tr => {
             const name = tr.querySelector('.prod-input').value;
             const qty = tr.querySelector('.qty-input').value;
-            if (name || qty) {
-                returns.push({ name: name, qty: qty });
-            }
+            if (name || qty) returns.push({ name: name, qty: qty });
         });
 
-        let savedInvoices = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
-        savedInvoices.push({
-            number: invNum,
-            date: invoiceDateInput.value,
-            customer: custName,
-            phone: document.getElementById('customerPhone').value,
-            total: grandTotal,
-            items: items,
-            returns: returns
-        });
+        const currentArea = document.getElementById('areaInput').value;
+        const currentBlock = document.getElementById('blockInput').value;
+        const currentStreet = streetInput.innerText.trim();
+        const currentJeda = document.getElementById('jedaInput').value;
+        const currentHome = document.getElementById('homeInput').value;
+
+        const newInvoiceData = {
+            number: invNum, date: invoiceDateInput.value, customer: custName, phone: phoneVal,
+            total: grandTotal, type: invoiceType, deliveryFee: deliveryFee,
+            items: items, returns: returns,
+            area: currentArea, block: currentBlock, street: currentStreet,
+            jeda: currentJeda, home: currentHome
+        };
+        savedInvoices.push(newInvoiceData);
         localStorage.setItem('fondant_saved_invoices', JSON.stringify(savedInvoices));
 
+        if (invoiceType === 'external' && (custName || phoneVal)) {
+            let existing = null;
+            if (phoneVal) existing = externalCustomersMeta.find(c => c.phone === phoneVal);
+            if (!existing && custName) existing = externalCustomersMeta.find(c => c.name.toLowerCase() === custName.toLowerCase());
+            if (existing) {
+                existing.name = custName || existing.name;
+                existing.phone = phoneVal || existing.phone;
+                existing.area = currentArea || existing.area;
+                existing.block = currentBlock || existing.block;
+                existing.street = currentStreet || existing.street;
+                existing.jeda = currentJeda || existing.jeda;
+                existing.home = currentHome || existing.home;
+            } else {
+                externalCustomersMeta.push({
+                    name: custName, phone: phoneVal,
+                    area: currentArea, block: currentBlock, street: currentStreet,
+                    jeda: currentJeda, home: currentHome
+                });
+            }
+            localStorage.setItem('fondant_external_customers_meta', JSON.stringify(externalCustomersMeta));
+        }
+
+        let logText = `تم حفظ وتصدير فاتورة ${invoiceType === 'external' ? 'خارجية' : 'مستشفيات'} رقم [ ${invNum} ] للعميل ( ${custName} ) بقيمة ${grandTotal}`;
+        if (deliveryFee > 0) logText += ` - رسوم توصيل: ${deliveryFee.toFixed(3)} KD`;
+        if (isSequenceChanged) logText = `<span style="color:red; font-weight:bold;">⚠️ تم تغيير تسلسل الفاتورة يدوياً إلى [ ${invNum} ] - ${custName} بقيمة ${grandTotal}</span>`;
         addLogEntry(logText, isSequenceChanged);
 
         const container = document.getElementById('invoiceContainer');
         container.classList.add('pdf-mode');
-
         try {
+            await new Promise(r => setTimeout(r, 100));
             const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
@@ -848,28 +1541,28 @@
             const imgHeight = (canvas.height * 210) / canvas.width;
             pdf.addImage(imgData, 'JPEG', 0, 0, 210, imgHeight);
             pdf.save(`Invoice_${invNum}_${custName}.pdf`);
-        } catch(err) {
-            alert("حدث خطأ أثناء حفظ وتصدير الـ PDF");
-        } finally {
-            container.classList.remove('pdf-mode');
-        }
+        } catch(err) { alert("حدث خطأ أثناء حفظ وتصدير الـ PDF"); }
+        finally { container.classList.remove('pdf-mode'); }
 
         currentInvoiceNum = getExpectedNextInvoiceNumber();
         invoiceNumberInput.value = currentInvoiceNum;
         localStorage.setItem('fondant_last_inv_num', currentInvoiceNum);
+        editingInvoiceNumber = null;
         clearFormFields();
         alert(`تم الحفظ والتصدير بنجاح! الفاتورة التالية برقم: ${currentInvoiceNum}`);
     });
 
     function clearFormFields() {
         customerInput.value = '';
-        document.getElementById('customerPhone').value = '';
+        customerPhone.value = '';
         document.getElementById('areaInput').value = '';
         document.getElementById('blockInput').value = '';
-        document.getElementById('streetInput').value = '';
+        streetInput.innerText = '';
         document.getElementById('jedaInput').value = '';
         document.getElementById('homeInput').value = '';
+        document.getElementById('deliveryFeeInput').value = '';
         returnsRows.innerHTML = '';
+        editingInvoiceNumber = null;
         populateAllDefaultItems();
     }
 
@@ -880,59 +1573,361 @@
         }
     });
 
-    // الفواتير المحفوظة
     document.getElementById('viewInvoicesBtn').addEventListener('click', () => {
         const tbody = document.getElementById('savedInvoicesList');
         const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
         tbody.innerHTML = '';
-        if(!saved.length) tbody.innerHTML = '<tr><td colspan="5">لا توجد فواتير محفوظة.</td></tr>';
+        if(!saved.length) tbody.innerHTML = '<tr><td colspan="6">لا توجد فواتير محفوظة.</td></tr>';
         else {
-            saved.forEach(inv => {
+            saved.slice().reverse().forEach(inv => {
                 const row = tbody.insertRow();
                 row.insertCell(0).innerText = inv.number;
-                row.insertCell(1).innerText = inv.date;
-                row.insertCell(2).innerText = inv.customer;
-                row.insertCell(3).innerText = inv.total;
-                row.insertCell(4).innerHTML = `<button class="btn btn-secondary" style="padding:3px 10px;" onclick="loadSavedInvoice(${inv.number})">استدعاء</button>`;
+                row.insertCell(1).innerText = inv.type === 'external' ? 'خارجية' : 'مستشفيات';
+                row.insertCell(2).innerText = inv.date;
+                row.insertCell(3).innerText = inv.customer;
+                row.insertCell(4).innerText = inv.total;
+                row.insertCell(5).innerHTML = `<button class="btn btn-secondary" style="padding:3px 10px;" onclick="loadSavedInvoice(${inv.number})">استدعاء</button>`;
             });
         }
-        document.getElementById('savedInvoicesModal').style.display = 'flex';
+        openModal('savedInvoicesModal');
     });
 
     function loadSavedInvoice(invNum) {
         const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
-        const inv = saved.find(i => i.number === invNum);
+        const inv = saved.find(i => parseInt(i.number) === parseInt(invNum));
         if(inv) {
+            invoiceType = inv.type || 'hospital';
+            updateInvoiceTypeUI();
             invoiceNumberInput.value = inv.number;
             currentInvoiceNum = inv.number;
+            editingInvoiceNumber = inv.number;
             invoiceDateInput.value = inv.date;
             customerInput.value = inv.customer;
-            document.getElementById('customerPhone').value = inv.phone || '';
+            customerPhone.value = inv.phone || '';
+            document.getElementById('areaInput').value = inv.area || '';
+            document.getElementById('blockInput').value = inv.block || '';
+            streetInput.innerText = inv.street || '';
+            document.getElementById('jedaInput').value = inv.jeda || '';
+            document.getElementById('homeInput').value = inv.home || '';
+
             invoiceRows.innerHTML = '';
             inv.items.forEach(item => createRowElement(item));
-            
             returnsRows.innerHTML = '';
             if (inv.returns && inv.returns.length) {
                 inv.returns.forEach(item => createReturnRowElement(item));
             }
-            
+            if (invoiceType === 'external' && inv.deliveryFee) {
+                document.getElementById('deliveryFeeInput').value = parseFloat(inv.deliveryFee).toFixed(3);
+            } else {
+                document.getElementById('deliveryFeeInput').value = '';
+            }
+            updateGrandTotal();
             closeModal('savedInvoicesModal');
-            addLogEntry(`تم استدعاء الفاتورة رقم [ ${invNum} ] للمعاينة.`, false);
+            addLogEntry(`تم استدعاء الفاتورة رقم [ ${invNum} ] للتعديل.`, false);
         }
     }
 
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    document.getElementById('statementBtn').addEventListener('click', () => {
+        const datalist = document.getElementById('allCustomersList');
+        datalist.innerHTML = '';
+        const allCustomers = [...new Set([...hospitalCustomersDB, ...externalCustomersDB])];
+        const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+        const allPhones = new Set();
+        saved.forEach(inv => {
+            if (inv.customer && !allCustomers.includes(inv.customer)) allCustomers.push(inv.customer);
+            if (inv.phone) allPhones.add(inv.phone);
+        });
+        allCustomers.sort();
+        allCustomers.forEach(c => { const opt = document.createElement('option'); opt.value = c; datalist.appendChild(opt); });
+        allPhones.forEach(p => { const opt = document.createElement('option'); opt.value = p; datalist.appendChild(opt); });
 
-    // إدارة الأصناف
+        const now = new Date();
+        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        document.getElementById('statementFromDate').value = firstOfMonth.toISOString().split('T')[0];
+        document.getElementById('statementToDate').value = now.toISOString().split('T')[0];
+        openModal('statementModal');
+    });
+
+    let lastStatementHTML = '';
+    let lastStatementFilename = '';
+
+    function buildStatementCompanyHeader() {
+        return `
+            <div class="statement-company-header">
+                <div class="sch-col sch-right">
+                    <div>فرع أسواق القرين:</div>
+                    <div>6070 9931 - 6010 9932 📞💬</div>
+                    <div>fondant.q8</div>
+                    <div>www.fondant-kw.com</div>
+                    <img src="https://i.postimg.cc/fLLx3hGx/instagram-QR-Code.png" class="sch-qr" crossorigin="anonymous" alt="QR">
+                </div>
+                <div class="sch-col sch-center">
+                    <img src="https://i.postimg.cc/WbJw6TdV/Orig-LOGO-Square.jpg" class="sch-logo" crossorigin="anonymous" alt="Logo">
+                    <div class="sch-brand">FONDANT CHOCO</div>
+                </div>
+                <div class="sch-col sch-left"></div>
+            </div>
+        `;
+    }
+
+    function generateStatement() {
+        const search = document.getElementById('statementCustomer').value.trim();
+        const fromDate = document.getElementById('statementFromDate').value;
+        const toDate = document.getElementById('statementToDate').value;
+        if (!search) { alert("يرجى تحديد اسم العميل أو رقم الموبايل."); return; }
+
+        const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+        const searchLower = search.toLowerCase();
+        const filtered = saved.filter(inv => {
+            const custMatch = (inv.customer || '').toLowerCase().includes(searchLower);
+            const phoneMatch = (inv.phone || '').toLowerCase().includes(searchLower);
+            if (!custMatch && !phoneMatch) return false;
+            if (fromDate && inv.date < fromDate) return false;
+            if (toDate && inv.date > toDate) return false;
+            return true;
+        }).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+        const resultArea = document.getElementById('statementResultArea');
+        if (!filtered.length) {
+            resultArea.innerHTML = `<div style="text-align:center; padding:30px; color:#c00; font-weight:bold;">لا توجد فواتير لهذا العميل خلال الفترة المحددة.</div>`;
+            lastStatementHTML = ''; return;
+        }
+        const customerName = filtered[0].customer || search;
+        const hasDelivery = filtered.some(inv => (parseFloat(inv.deliveryFee) || 0) > 0);
+
+        let totalItems = 0, totalDelivery = 0, totalGrand = 0;
+        filtered.forEach(inv => {
+            const grand = parseFloat((inv.total || '0').replace(/[^\d.]/g, '')) || 0;
+            const delivery = parseFloat(inv.deliveryFee) || 0;
+            totalGrand += grand; totalDelivery += delivery; totalItems += (grand - delivery);
+        });
+
+        const fromDateDisplay = fromDate ? new Date(fromDate).toLocaleDateString('en-GB') : '—';
+        const toDateDisplay = toDate ? new Date(toDate).toLocaleDateString('en-GB') : '—';
+
+        let headersHTML = `<th style="width:8%;">#</th><th style="width:18%;">رقم الفاتورة<br>Invoice No.</th><th style="width:22%;">التاريخ<br>Date</th>`;
+        if (hasDelivery) headersHTML += `<th style="width:18%;">قيمة الأصناف<br>Items Amount</th><th style="width:15%;">التوصيل<br>Delivery</th>`;
+        headersHTML += `<th style="width:19%;">الإجمالي<br>Total</th>`;
+
+        let rowsHTML = '';
+        filtered.forEach((inv, idx) => {
+            const grand = parseFloat((inv.total || '0').replace(/[^\d.]/g, '')) || 0;
+            const delivery = parseFloat(inv.deliveryFee) || 0;
+            const sub = grand - delivery;
+            const dateDisplay = inv.date ? new Date(inv.date).toLocaleDateString('en-GB') : '—';
+            rowsHTML += `<tr><td>${idx + 1}</td><td>${inv.number || ''}</td><td>${dateDisplay}</td>`;
+            if (hasDelivery) rowsHTML += `<td style="direction:ltr; font-weight:bold;">KD ${sub.toFixed(3)}</td><td style="direction:ltr; font-weight:bold;">KD ${delivery.toFixed(3)}</td>`;
+            rowsHTML += `<td style="direction:ltr; font-weight:bold; color:#d32f2f;">KD ${grand.toFixed(3)}</td></tr>`;
+        });
+
+        let summaryHTML = '';
+        if (hasDelivery) summaryHTML += `<div class="line"><span>إجمالي الأصناف / Items Total:</span><span class="val">KD ${totalItems.toFixed(3)}</span></div><div class="line"><span>إجمالي التوصيل / Delivery Total:</span><span class="val">KD ${totalDelivery.toFixed(3)}</span></div>`;
+        summaryHTML += `<div class="line total"><span>الإجمالي الكلي / Grand Total:</span><span class="val" style="font-size:17.6px;">KD ${totalGrand.toFixed(3)}</span></div>`;
+
+        const html = `
+            ${buildStatementCompanyHeader()}
+            <div class="statement-title"><h2>Customer Statement</h2><div class="sub">كشف حساب عميل</div></div>
+            <div class="statement-info">
+                <div>العميل / Customer: <span class="statement-customer-name">${customerName}</span></div>
+                <div>من / From: <b>${fromDateDisplay}</b></div>
+                <div>إلى / To: <b>${toDateDisplay}</b></div>
+                <div>عدد الفواتير / Invoices: <b>${filtered.length}</b></div>
+            </div>
+            <table class="statement-table"><thead><tr>${headersHTML}</tr></thead><tbody>${rowsHTML}</tbody></table>
+            <div class="statement-summary">${summaryHTML}</div>
+        `;
+        resultArea.innerHTML = html;
+        lastStatementHTML = html;
+        lastStatementFilename = `Statement_${customerName.replace(/\s+/g, '_')}_${fromDate}_to_${toDate}.pdf`;
+        addLogEntry(`تم إنشاء كشف حساب للعميل ( ${customerName} ) - عدد الفواتير: ${filtered.length}`, false);
+    }
+
+    function resetStatementFilters() {
+        document.getElementById('statementCustomer').value = '';
+        const now = new Date();
+        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        document.getElementById('statementFromDate').value = firstOfMonth.toISOString().split('T')[0];
+        document.getElementById('statementToDate').value = now.toISOString().split('T')[0];
+        document.getElementById('statementResultArea').innerHTML = '<div style="text-align:center; padding:30px; color:#999; font-size:14px;">اختر العميل والفترة الزمنية ثم اضغط "🔍 عرض الكشف"</div>';
+        lastStatementHTML = '';
+    }
+
+    async function exportStatementPDF() {
+        if (!lastStatementHTML) { alert("يرجى عرض الكشف أولاً قبل التصدير."); return; }
+        const customer = document.getElementById('statementCustomer').value.trim();
+        const styles = `
+            .statement-company-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 2px solid #000; margin-bottom: 15px; }
+            .statement-company-header .sch-col { display: flex; flex-direction: column; gap: 2px; }
+            .statement-company-header .sch-right { text-align: center; align-items: center; font-size: 11px; font-weight: bold; color: #111; line-height: 1.4; min-width: 130px; }
+            .statement-company-header .sch-center { text-align: center; align-items: center; flex: 1; }
+            .statement-company-header .sch-left { min-width: 130px; }
+            .statement-company-header .sch-logo { height: 55px; width: auto; object-fit: contain; }
+            .statement-company-header .sch-brand { font-size: 18px; font-weight: 900; letter-spacing: 1px; color: #000; font-family: Arial, sans-serif; margin-top: 3px; }
+            .statement-company-header .sch-qr { width: 55px; height: 55px; margin-top: 3px; }
+            .statement-title { text-align: center; margin: 12px 0 15px; }
+            .statement-title h2 { font-size: 22px; font-weight: 900; color: #000; font-family: Arial; letter-spacing: 1px; }
+            .statement-title .sub { font-size: 15px; color: #333; margin-top: 4px; font-weight: bold; }
+            .statement-info { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 13px; font-weight: bold; margin-bottom: 12px; padding: 12px 15px; background: #fafafa; border-radius: 6px; border: 1px solid #ddd; }
+            .statement-customer-name { font-size: 22px; color: #d32f2f; font-weight: 900; }
+            .statement-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 15px; }
+            .statement-table th { border: 1.2px solid #000; background: #333; color: #fff; padding: 9px 6px; font-weight: bold; text-align: center; }
+            .statement-table td { border: 1px solid #999; padding: 8px 6px; text-align: center; }
+            .statement-table tr:nth-child(even) td { background: #f9f9f9; }
+            .statement-summary { display: flex; flex-direction: column; gap: 5px; padding: 12px 18px; background: #fff; border: 2px solid #000; border-radius: 6px; margin-left: auto; min-width: 340px; max-width: 400px; }
+            .statement-summary .line { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; }
+            .statement-summary .line.total { border-top: 2px solid #000; padding-top: 6px; margin-top: 4px; font-size: 16px; }
+            .statement-summary .val { color: #d32f2f; font-weight: 900; direction: ltr; font-family: Arial, sans-serif; }
+        `;
+        await exportHTMLToPDF(lastStatementHTML + '<style>' + styles + '</style>', lastStatementFilename);
+        addLogEntry(`تم تصدير كشف الحساب للعميل ( ${customer} ) بصيغة PDF.`, false);
+    }
+
+    document.getElementById('reportBtn').addEventListener('click', () => {
+        const now = new Date();
+        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        document.getElementById('reportFromDate').value = firstOfMonth.toISOString().split('T')[0];
+        document.getElementById('reportToDate').value = now.toISOString().split('T')[0];
+        openModal('reportModal');
+    });
+
+    let lastReportHTML = '';
+    let lastReportFilename = '';
+
+    function generateReport() {
+        const fromDate = document.getElementById('reportFromDate').value;
+        const toDate = document.getElementById('reportToDate').value;
+        const typeFilter = document.getElementById('reportTypeFilter').value;
+        const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+        const filtered = saved.filter(inv => {
+            if (fromDate && inv.date < fromDate) return false;
+            if (toDate && inv.date > toDate) return false;
+            if (typeFilter !== 'all' && (inv.type || 'hospital') !== typeFilter) return false;
+            return true;
+        }).sort((a, b) => (a.date || '').localeCompare(b.date || '') || (parseInt(a.number) || 0) - (parseInt(b.number) || 0));
+
+        const resultArea = document.getElementById('reportResultArea');
+        if (!filtered.length) {
+            resultArea.innerHTML = `<div style="text-align:center; padding:30px; color:#c00; font-weight:bold;">لا توجد فواتير خلال الفترة المحددة.</div>`;
+            lastReportHTML = ''; return;
+        }
+        let totalItems = 0, totalDelivery = 0, totalGrand = 0;
+        filtered.forEach(inv => {
+            const grand = parseFloat((inv.total || '0').replace(/[^\d.]/g, '')) || 0;
+            const delivery = parseFloat(inv.deliveryFee) || 0;
+            totalGrand += grand; totalDelivery += delivery; totalItems += (grand - delivery);
+        });
+        const fromDisplay = fromDate ? new Date(fromDate).toLocaleDateString('en-GB') : '—';
+        const toDisplay = toDate ? new Date(toDate).toLocaleDateString('en-GB') : '—';
+        const typeLabel = typeFilter === 'all' ? 'الكل / All' : (typeFilter === 'hospital' ? 'مستشفيات / Hospital' : 'خارجية / External');
+
+        let rowsHTML = '';
+        filtered.forEach((inv, idx) => {
+            const grand = parseFloat((inv.total || '0').replace(/[^\d.]/g, '')) || 0;
+            const delivery = parseFloat(inv.deliveryFee) || 0;
+            const sub = grand - delivery;
+            const dateDisplay = inv.date ? new Date(inv.date).toLocaleDateString('en-GB') : '—';
+            const typeLabelRow = inv.type === 'external' ? 'خارجية' : 'مستشفيات';
+            let itemsDetail = '';
+            if (inv.items && inv.items.length) {
+                itemsDetail = inv.items.filter(it => it.qty && parseFloat(it.qty) > 0).map(it => `${it.name} × ${it.qty}`).join('<br>');
+            }
+            rowsHTML += `<tr>
+                <td>${idx + 1}</td><td>${inv.number || ''}</td><td>${dateDisplay}</td>
+                <td>${inv.customer || ''}</td><td style="direction:ltr;">${inv.phone || '—'}</td>
+                <td>${typeLabelRow}</td>
+                <td style="text-align:right; font-size:11px; direction:ltr; max-width:220px; word-wrap:break-word;">${itemsDetail || '—'}</td>
+                <td style="direction:ltr; font-weight:bold;">KD ${sub.toFixed(3)}</td>
+                <td style="direction:ltr; font-weight:bold;">KD ${delivery.toFixed(3)}</td>
+                <td style="direction:ltr; font-weight:bold; color:#d32f2f;">KD ${grand.toFixed(3)}</td>
+            </tr>`;
+        });
+
+        const html = `
+            ${buildStatementCompanyHeader()}
+            <div class="statement-title"><h2>Invoices Report</h2><div class="sub">تقرير الفواتير</div></div>
+            <div class="statement-info">
+                <div>الفترة / Period: <b>${fromDisplay}</b> — <b>${toDisplay}</b></div>
+                <div>النوع / Type: <b>${typeLabel}</b></div>
+                <div>عدد الفواتير / Total Invoices: <b>${filtered.length}</b></div>
+            </div>
+            <table class="statement-table" style="font-size:11.5px;">
+                <thead><tr>
+                    <th style="width:4%;">#</th><th style="width:8%;">رقم<br>No.</th><th style="width:10%;">التاريخ<br>Date</th>
+                    <th style="width:13%;">العميل<br>Customer</th><th style="width:11%;">الموبايل<br>Phone</th>
+                    <th style="width:8%;">النوع<br>Type</th><th style="width:22%;">التفاصيل<br>Items</th>
+                    <th style="width:8%;">الأصناف<br>Items</th><th style="width:7%;">التوصيل<br>Deliv.</th><th style="width:9%;">الإجمالي<br>Total</th>
+                </tr></thead>
+                <tbody>${rowsHTML}</tbody>
+            </table>
+            <div class="statement-summary">
+                <div class="line"><span>إجمالي الأصناف / Items Total:</span><span class="val">KD ${totalItems.toFixed(3)}</span></div>
+                <div class="line"><span>إجمالي التوصيل / Delivery Total:</span><span class="val">KD ${totalDelivery.toFixed(3)}</span></div>
+                <div class="line total"><span>الإجمالي الكلي / Grand Total:</span><span class="val" style="font-size:17.6px;">KD ${totalGrand.toFixed(3)}</span></div>
+            </div>
+        `;
+        resultArea.innerHTML = html;
+        lastReportHTML = html;
+        lastReportFilename = `Report_${fromDate}_to_${toDate}_${typeFilter}.pdf`;
+        addLogEntry(`تم إنشاء تقرير فواتير من ${fromDisplay} إلى ${toDisplay} - عدد الفواتير: ${filtered.length}`, false);
+    }
+
+    function resetReportFilters() {
+        const now = new Date();
+        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        document.getElementById('reportFromDate').value = firstOfMonth.toISOString().split('T')[0];
+        document.getElementById('reportToDate').value = now.toISOString().split('T')[0];
+        document.getElementById('reportTypeFilter').value = 'all';
+        document.getElementById('reportResultArea').innerHTML = '<div style="text-align:center; padding:30px; color:#999; font-size:14px;">اختر الفترة الزمنية والنوع ثم اضغط "🔍 عرض التقرير"</div>';
+        lastReportHTML = '';
+    }
+
+    async function exportReportPDF() {
+        if (!lastReportHTML) { alert("يرجى عرض التقرير أولاً قبل التصدير."); return; }
+        const styles = `
+            .statement-company-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 2px solid #000; margin-bottom: 15px; }
+            .statement-company-header .sch-col { display: flex; flex-direction: column; gap: 2px; }
+            .statement-company-header .sch-right { text-align: center; align-items: center; font-size: 11px; font-weight: bold; color: #111; line-height: 1.4; min-width: 130px; }
+            .statement-company-header .sch-center { text-align: center; align-items: center; flex: 1; }
+            .statement-company-header .sch-left { min-width: 130px; }
+            .statement-company-header .sch-logo { height: 55px; width: auto; object-fit: contain; }
+            .statement-company-header .sch-brand { font-size: 18px; font-weight: 900; letter-spacing: 1px; color: #000; font-family: Arial, sans-serif; margin-top: 3px; }
+            .statement-company-header .sch-qr { width: 55px; height: 55px; margin-top: 3px; }
+            .statement-title { text-align: center; margin: 12px 0 15px; }
+            .statement-title h2 { font-size: 22px; font-weight: 900; color: #000; font-family: Arial; letter-spacing: 1px; }
+            .statement-title .sub { font-size: 15px; color: #333; margin-top: 4px; font-weight: bold; }
+            .statement-info { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 12px; font-weight: bold; margin-bottom: 12px; padding: 12px 15px; background: #fafafa; border-radius: 6px; border: 1px solid #ddd; }
+            .statement-table { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-bottom: 15px; }
+            .statement-table th { border: 1.2px solid #000; background: #333; color: #fff; padding: 7px 4px; font-weight: bold; text-align: center; font-size: 10px; }
+            .statement-table td { border: 1px solid #999; padding: 6px 4px; text-align: center; }
+            .statement-table tr:nth-child(even) td { background: #f9f9f9; }
+            .statement-summary { display: flex; flex-direction: column; gap: 5px; padding: 12px 18px; background: #fff; border: 2px solid #000; border-radius: 6px; margin-left: auto; min-width: 340px; max-width: 400px; }
+            .statement-summary .line { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; }
+            .statement-summary .line.total { border-top: 2px solid #000; padding-top: 6px; margin-top: 4px; font-size: 16px; }
+            .statement-summary .val { color: #d32f2f; font-weight: 900; direction: ltr; font-family: Arial, sans-serif; }
+        `;
+        await exportHTMLToPDF(lastReportHTML + '<style>' + styles + '</style>', lastReportFilename);
+        addLogEntry('تم تصدير تقرير الفواتير بصيغة PDF.', false);
+    }
+
     document.getElementById('manageItemsBtn').addEventListener('click', () => {
+        currentItemsModalMode = 'hospital';
+        document.getElementById('itemsModalTitle').innerText = 'إدارة أصناف المستشفيات';
         renderItemsModal();
-        document.getElementById('itemsModal').style.display = 'flex';
+        openModal('itemsModal');
+    });
+
+    document.getElementById('manageExternalItemsBtn').addEventListener('click', () => {
+        currentItemsModalMode = 'external';
+        document.getElementById('itemsModalTitle').innerText = 'إدارة الأصناف الخارجية';
+        renderItemsModal();
+        openModal('itemsModal');
     });
 
     function renderItemsModal() {
         const tbody = document.getElementById('itemsListTable');
+        const db = getItemsByMode(currentItemsModalMode);
         tbody.innerHTML = '';
-        itemsDB.forEach((item, index) => {
+        db.forEach((item, index) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><input type="text" class="edit-item-name" value="${item.name}" style="width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:14px;"></td>
@@ -956,7 +1951,8 @@
 
     function deleteItem(index) {
         if (confirm("هل أنت متأكد من حذف هذا الصنف؟")) {
-            itemsDB.splice(index, 1);
+            const db = getItemsByMode(currentItemsModalMode);
+            db.splice(index, 1);
             renderItemsModal();
         }
     }
@@ -973,16 +1969,218 @@
                 if (name) newItems.push({ name: toCapitalTitleCase(name), price: price });
             }
         });
-        localStorage.setItem('fondant_items', JSON.stringify(newItems));
-        itemsDB = newItems;
-        alert("تم حفظ الأصناف بنجاح!");
+
+        const storageKey = currentItemsModalMode === 'external' ? 'fondant_external_items' : 'fondant_items';
+        localStorage.setItem(storageKey, JSON.stringify(newItems));
+        if (currentItemsModalMode === 'external') externalItemsDB = newItems;
+        else hospitalItemsDB = newItems;
+
+        let updatedCount = 0;
+        document.querySelectorAll('#invoiceRows tr').forEach(tr => {
+            const prodInput = tr.querySelector('.prod-input');
+            const priceInput = tr.querySelector('.price-input');
+            const itemName = toCapitalTitleCase(prodInput.value.trim());
+            const matched = newItems.find(i => i.name.toLowerCase() === itemName.toLowerCase());
+            if (matched) {
+                const newPrice = matched.price.toFixed(3);
+                if (priceInput.value !== newPrice) {
+                    priceInput.value = newPrice;
+                    calculateRowTotal(tr);
+                    updatedCount++;
+                }
+            }
+        });
+
+        alert(`تم حفظ الأصناف بنجاح!${updatedCount > 0 ? ` (تم تحديث أسعار ${updatedCount} صنف مباشرة على الفاتورة)` : ''}`);
         closeModal('itemsModal');
         if (document.querySelectorAll('#invoiceRows tr').length === 0) populateAllDefaultItems();
+    }
+
+    document.getElementById('manageHospitalNamesBtn').addEventListener('click', () => {
+        renderHospitalNames();
+        openModal('hospitalNamesModal');
+    });
+
+    function renderHospitalNames() {
+        const tbody = document.getElementById('hospitalNamesList');
+        tbody.innerHTML = '';
+        hospitalCustomersDB.forEach((name, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td><input type="text" class="edit-hosp-name" value="${name}" style="width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:14px;"></td>
+                <td><button class="btn btn-danger" onclick="deleteHospitalName(${index})">حذف</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function addHospitalNameRow() {
+        const tbody = document.getElementById('hospitalNamesList');
+        const tr = document.createElement('tr');
+        const idx = tbody.querySelectorAll('tr').length;
+        tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td><input type="text" class="edit-hosp-name" value="" placeholder="اسم المستشفى" style="width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:14px;"></td>
+            <td><button class="btn btn-danger" onclick="this.closest('tr').remove()">حذف</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function deleteHospitalName(index) {
+        if (confirm("هل أنت متأكد من حذف هذا الاسم؟")) {
+            hospitalCustomersDB.splice(index, 1);
+            renderHospitalNames();
+        }
+    }
+
+    function saveHospitalNames() {
+        const rows = document.querySelectorAll('#hospitalNamesList tr');
+        const newNames = [];
+        rows.forEach(row => {
+            const input = row.querySelector('.edit-hosp-name');
+            if (input) {
+                const name = input.value.trim();
+                if (name) newNames.push(toCapitalTitleCase(name));
+            }
+        });
+        hospitalCustomersDB = newNames;
+        localStorage.setItem('fondant_hospital_customers', JSON.stringify(newNames));
+        alert(`تم حفظ ${newNames.length} اسم مستشفى بنجاح!`);
+        closeModal('hospitalNamesModal');
+        addLogEntry(`تم تعديل قائمة أسماء المستشفيات ( ${newNames.length} اسم )`, false);
+    }
+
+    document.getElementById('manageExternalCustomersBtn').addEventListener('click', () => {
+        renderExternalCustomers();
+        openModal('externalCustomersModal');
+    });
+
+    function renderExternalCustomers() {
+        const tbody = document.getElementById('externalCustomersList');
+        tbody.innerHTML = '';
+        if (!externalCustomersMeta.length) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">لا يوجد عملاء خارجيون محفوظون. أضف يدوياً أو اضغط "↻ تحديث من الفواتير".</td></tr>';
+            return;
+        }
+        externalCustomersMeta.forEach((c, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td><input type="text" class="edit-ext-name" value="${c.name || ''}" style="width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:13px;"></td>
+                <td><input type="text" class="edit-ext-phone" value="${c.phone || ''}" style="width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:13px; direction:ltr;"></td>
+                <td><input type="text" class="edit-ext-area" value="${c.area || ''}" style="width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:13px;"></td>
+                <td><input type="text" class="edit-ext-block" value="${c.block || ''}" style="width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:13px;"></td>
+                <td><input type="text" class="edit-ext-street" value="${c.street || ''}" style="width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:13px;"></td>
+                <td><input type="text" class="edit-ext-jeda" value="${c.jeda || ''}" style="width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:13px;"></td>
+                <td><input type="text" class="edit-ext-home" value="${c.home || ''}" style="width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:13px;"></td>
+                <td><button class="btn btn-danger" onclick="deleteExternalCustomer(${index})" style="padding:4px 8px; font-size:12px;">حذف</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function addExternalCustomerRow() {
+        const tbody = document.getElementById('externalCustomersList');
+        if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
+        const tr = document.createElement('tr');
+        const idx = tbody.querySelectorAll('tr').length;
+        const inputStyle = 'width:100%; text-align:center; border:none; background:transparent; font-weight:bold; font-size:13px;';
+        tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td><input type="text" class="edit-ext-name" value="" placeholder="اسم" style="${inputStyle}"></td>
+            <td><input type="text" class="edit-ext-phone" value="" placeholder="موبايل" style="${inputStyle} direction:ltr;"></td>
+            <td><input type="text" class="edit-ext-area" value="" placeholder="منطقة" style="${inputStyle}"></td>
+            <td><input type="text" class="edit-ext-block" value="" placeholder="قطعة" style="${inputStyle}"></td>
+            <td><input type="text" class="edit-ext-street" value="" placeholder="شارع" style="${inputStyle}"></td>
+            <td><input type="text" class="edit-ext-jeda" value="" placeholder="جادة" style="${inputStyle}"></td>
+            <td><input type="text" class="edit-ext-home" value="" placeholder="منزل" style="${inputStyle}"></td>
+            <td><button class="btn btn-danger" onclick="this.closest('tr').remove()" style="padding:4px 8px; font-size:12px;">حذف</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function deleteExternalCustomer(index) {
+        if (confirm("هل أنت متأكد من حذف هذا العميل؟")) {
+            externalCustomersMeta.splice(index, 1);
+            renderExternalCustomers();
+        }
+    }
+
+    function saveExternalCustomers() {
+        const rows = document.querySelectorAll('#externalCustomersList tr');
+        const newMeta = [];
+        rows.forEach(row => {
+            const nameInput = row.querySelector('.edit-ext-name');
+            const phoneInput = row.querySelector('.edit-ext-phone');
+            const areaInput = row.querySelector('.edit-ext-area');
+            const blockInput = row.querySelector('.edit-ext-block');
+            const streetInput = row.querySelector('.edit-ext-street');
+            const jedaInput = row.querySelector('.edit-ext-jeda');
+            const homeInput = row.querySelector('.edit-ext-home');
+            if (nameInput) {
+                const name = nameInput.value.trim();
+                const phone = phoneInput ? phoneInput.value.trim() : '';
+                const area = areaInput ? areaInput.value.trim() : '';
+                const block = blockInput ? blockInput.value.trim() : '';
+                const street = streetInput ? streetInput.value.trim() : '';
+                const jeda = jedaInput ? jedaInput.value.trim() : '';
+                const home = homeInput ? homeInput.value.trim() : '';
+                if (name || phone) {
+                    newMeta.push({
+                        name: toCapitalTitleCase(name), phone: phone,
+                        area: area, block: block, street: street,
+                        jeda: jeda, home: home
+                    });
+                }
+            }
+        });
+        externalCustomersMeta = newMeta;
+        localStorage.setItem('fondant_external_customers_meta', JSON.stringify(newMeta));
+        alert(`تم حفظ ${newMeta.length} عميل خارجي بنجاح!`);
+        closeModal('externalCustomersModal');
+        addLogEntry(`تم تعديل قائمة العملاء الخارجيين ( ${newMeta.length} عميل )`, false);
+    }
+
+    function syncExternalFromInvoices() {
+        const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+        const externalInvoices = saved.filter(inv => inv.type === 'external');
+        let addedCount = 0;
+        externalInvoices.forEach(inv => {
+            const name = (inv.customer || '').trim();
+            const phone = (inv.phone || '').trim();
+            if (!name && !phone) return;
+            let existing = null;
+            if (phone) existing = externalCustomersMeta.find(c => c.phone === phone);
+            if (!existing && name) existing = externalCustomersMeta.find(c => c.name.toLowerCase() === name.toLowerCase());
+            if (existing) {
+                if (name && !existing.name) existing.name = name;
+                if (phone && !existing.phone) existing.phone = phone;
+                if (inv.area && !existing.area) existing.area = inv.area;
+                if (inv.block && !existing.block) existing.block = inv.block;
+                if (inv.street && !existing.street) existing.street = inv.street;
+                if (inv.jeda && !existing.jeda) existing.jeda = inv.jeda;
+                if (inv.home && !existing.home) existing.home = inv.home;
+            } else {
+                externalCustomersMeta.push({
+                    name: toCapitalTitleCase(name), phone: phone,
+                    area: inv.area || '', block: inv.block || '',
+                    street: inv.street || '', jeda: inv.jeda || '',
+                    home: inv.home || ''
+                });
+                addedCount++;
+            }
+        });
+        localStorage.setItem('fondant_external_customers_meta', JSON.stringify(externalCustomersMeta));
+        renderExternalCustomers();
+        alert(`تم التحديث! ${addedCount} عميل جديد تمت إضافته. الإجمالي: ${externalCustomersMeta.length}`);
+        addLogEntry(`تم مزامنة العملاء الخارجيين من الفواتير - إجمالي: ${externalCustomersMeta.length}`, false);
     }
 
     checkBackupReminder();
     setInterval(checkBackupReminder, 60000);
 
+    updateInvoiceTypeUI();
     populateAllDefaultItems();
 </script>
 
