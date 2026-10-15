@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YASSER ELKHATEEB</title>
+    <title>FONDANT CHOCO - نظام الفواتير</title>
     <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/WbJw6TdV/Orig-LOGO-Square.jpg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -24,7 +24,6 @@
             position: relative; z-index: 10000;
         }
 
-        /* الشريط الجانبي لسطح المكتب */
         .top-bar {
             position: fixed; right: 0; top: 0; width: 210px; height: 100vh;
             background: rgba(238, 242, 245, 0.99); padding: 15px;
@@ -33,10 +32,7 @@
             transition: right 0.3s ease;
         }
 
-        /* شريط الجوال العلوي */
-        .mobile-header-bar {
-            display: none;
-        }
+        .mobile-header-bar { display: none; }
 
         .btn {
             padding: 10px 14px; border: none; border-radius: 6px; font-weight: bold;
@@ -157,7 +153,6 @@
             word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap;
         }
         #streetInput:focus { border-bottom-style: solid; border-color: #000; }
-        #streetInput:empty:before { content: attr(data-placeholder); color: #aaa; font-weight: normal; }
 
         .autocomplete-wrapper { position: relative; flex: 1; width: 100%; }
         .autocomplete-list {
@@ -167,11 +162,14 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
             display: none; text-align: right;
         }
+        /* ========== تعديل: تلوين + تكبير قائمة الأصناف المنسدلة 50% ========== */
         .autocomplete-item {
-            padding: 8px 12px; cursor: pointer;
-            border-bottom: 1px solid #eee; font-size: 13px;
+            padding: 10px 14px; cursor: pointer;
+            border-bottom: 1px solid #c8e6c9; font-size: 19.5px;
+            background: #e8f5e9; color: #1b5e20; font-weight: bold;
+            text-align: right; transition: 0.15s;
         }
-        .autocomplete-item:hover { background: #f0f0f0; font-weight: bold; }
+        .autocomplete-item:hover { background: #4caf50; color: #fff; font-weight: 900; }
 
         #customerList {
             background: #e3f2fd;
@@ -186,7 +184,6 @@
             padding: 12px 16px;
             border-bottom: 1px solid #90caf9;
             letter-spacing: 0.5px;
-            transition: 0.15s;
         }
         #customerList .autocomplete-item:hover {
             background: #1976d2;
@@ -209,7 +206,10 @@
             text-align: center; color: #000; font-family: Arial, sans-serif;
             box-sizing: border-box; padding: 0; line-height: normal; vertical-align: middle;
         }
-        .items-table td.prod-cell input { text-align: left; text-transform: capitalize; font-size: 14.5px !important; }
+        .items-table td.prod-cell input { text-align: left; text-transform: capitalize; font-size: 22px !important; }
+
+        /* ========== تعديل: محاذاة البحث في المرتجعات للمنتصف ========== */
+        #returnsRows td.prod-cell input { text-align: center !important; }
 
         .items-table th:nth-child(1) { width: auto; }
         .items-table th:nth-child(2) { width: 2.35cm; }
@@ -222,11 +222,12 @@
 
         .row-total { font-size: 15px !important; font-weight: 900 !important; color: #000; text-align: right !important; padding-right: 8px; }
 
-        /* تمييز الصف بالكامل عند الوقوف على حقل الكمية */
         #invoiceRows tr.row-active td,
         #returnsRows tr.row-active td {
             background: #fff59d !important;
         }
+
+        .qty-cell { cursor: text; }
 
         .add-row-btn {
             background: #17a2b8; color: white; border: none;
@@ -331,13 +332,9 @@
             font-size: 11px; font-weight: bold; color: #111;
             line-height: 1.4; min-width: 130px;
         }
-        .statement-company-header .sch-center {
-            text-align: center; align-items: center; flex: 1;
-        }
+        .statement-company-header .sch-center { text-align: center; align-items: center; flex: 1; }
         .statement-company-header .sch-left { min-width: 130px; }
-        .statement-company-header .sch-logo {
-            height: 55px; width: auto; object-fit: contain;
-        }
+        .statement-company-header .sch-logo { height: 55px; width: auto; object-fit: contain; }
         .statement-company-header .sch-brand {
             font-size: 18px; font-weight: 900; letter-spacing: 1px;
             color: #000; font-family: Arial, sans-serif; margin-top: 3px;
@@ -345,13 +342,8 @@
         .statement-company-header .sch-qr { width: 55px; height: 55px; margin-top: 3px; }
 
         .statement-title { text-align: center; margin: 12px 0 15px; }
-        .statement-title h2 {
-            font-size: 20px; font-weight: 900; color: #000;
-            font-family: Arial; letter-spacing: 1px;
-        }
-        .statement-title .sub {
-            font-size: 14px; color: #333; margin-top: 4px; font-weight: bold;
-        }
+        .statement-title h2 { font-size: 20px; font-weight: 900; color: #000; font-family: Arial; letter-spacing: 1px; }
+        .statement-title .sub { font-size: 14px; color: #333; margin-top: 4px; font-weight: bold; }
 
         .statement-info {
             display: flex; justify-content: space-between; flex-wrap: wrap;
@@ -375,10 +367,7 @@
             border: 2px solid #000; border-radius: 6px;
             margin-left: auto; min-width: 340px; max-width: 400px;
         }
-        .statement-summary .line {
-            display: flex; justify-content: space-between;
-            font-size: 14px; font-weight: bold;
-        }
+        .statement-summary .line { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; }
         .statement-summary .line.total {
             border-top: 2px solid #000; padding-top: 6px;
             margin-top: 4px; font-size: 16px;
@@ -401,9 +390,7 @@
         .pdf-mode #streetInput { font-size: 17.5px !important; }
         .pdf-mode #customerPhone { font-size: 18.7px !important; }
         .pdf-mode #invoiceRows tr.row-active td,
-        .pdf-mode #returnsRows tr.row-active td {
-            background: #ffffff !important;
-        }
+        .pdf-mode #returnsRows tr.row-active td { background: #ffffff !important; }
 
         .password-input {
             width: 100%; padding: 12px; font-size: 18px;
@@ -413,7 +400,6 @@
         }
         .password-input:focus { outline: none; border-color: #17a2b8; }
 
-        /* توقيع المطور */
         .signature-card {
             position: fixed; bottom: 15px; left: 15px;
             background: transparent; color: #1565c0;
@@ -436,21 +422,12 @@
             50% { transform: translateY(-12px); }
             100% { transform: translateY(0px); }
         }
-        .signature-card .name {
-            font-size: 0.7125rem; font-weight: 700;
-            margin-bottom: 3px; color: #1565c0;
-        }
-        .signature-card .title {
-            font-size: 0.525rem; opacity: 0.95;
-            font-weight: 500; color: #1565c0;
-        }
+        .signature-card .name { font-size: 0.7125rem; font-weight: 700; margin-bottom: 3px; color: #1565c0; }
+        .signature-card .title { font-size: 0.525rem; opacity: 0.95; font-weight: 500; color: #1565c0; }
 
-        /* تعديلات الموبايل والشاشات الصغيرة */
         @media (max-width: 768px) {
             body { padding-right: 15px !important; padding-top: 65px; }
             .invoice-system { margin: 0 auto; }
-            
-            /* شريط الجوال العلوي */
             .mobile-header-bar {
                 display: flex; position: fixed; top: 0; left: 0; right: 0;
                 height: 52px; background: #ffffff; box-shadow: 0 2px 10px rgba(0,0,0,0.12);
@@ -462,52 +439,31 @@
                 border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;
                 display: flex; align-items: center; gap: 5px;
             }
-
-            /* تحويل الشريط الجانبي إلى درج منزلق (Drawer) */
-            .top-bar {
-                right: -270px; width: 260px; height: 100vh;
-                box-shadow: -5px 0 25px rgba(0,0,0,0.3);
-                background: #ffffff;
-            }
-            .top-bar.mobile-open {
-                right: 0;
-            }
-
-            /* خلفية معتمة عند فتح القائمة بالموبايل */
+            .top-bar { right: -270px; width: 260px; height: 100vh; box-shadow: -5px 0 25px rgba(0,0,0,0.3); background: #ffffff; }
+            .top-bar.mobile-open { right: 0; }
             .mobile-backdrop {
                 position: fixed; top: 0; left: 0; right: 0; bottom: 0;
                 background: rgba(0,0,0,0.5); z-index: 9997; display: none;
             }
-            .top-bar.mobile-open ~ .mobile-backdrop {
-                display: block;
-            }
-
-            .signature-card {
-                position: relative; bottom: auto; left: auto;
-                margin: 20px auto 0; width: fit-content; animation: none;
-            }
+            .top-bar.mobile-open ~ .mobile-backdrop { display: block; }
+            .signature-card { position: relative; bottom: auto; left: auto; margin: 20px auto 0; width: fit-content; animation: none; }
         }
     </style>
 </head>
 <body>
 
 <div id="backupReminderBanner">
-    <span>⚠️ تنبيه: لم تقم بأخذ نسخة احتياطية لبيانات النظام منذ أكثر من ساعتين. يرجى أخذ نسخة احتياطية الآن لحفظ البيانات.</span>
+    <span>⚠️ تنبيه: لم تقم بأخذ نسخة احتياطية لبيانات النظام منذ أكثر من ساعة. يرجى أخذ نسخة احتياطية الآن لحفظ البيانات.</span>
     <button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="exportBackup()">أخذ نسخة الآن</button>
 </div>
 
-<!-- شريط علوي يظهر فقط في الهواتف المحمولة -->
 <div class="mobile-header-bar no-print">
     <div class="mobile-title">FONDANT CHOCO</div>
-    <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">
-        <span>☰ قائمة الخيارات</span>
-    </button>
+    <button class="mobile-menu-btn" onclick="toggleMobileSidebar()"><span>☰ قائمة الخيارات</span></button>
 </div>
 
-<!-- خلفية معتمة للقائمة الجانبية في الجوال -->
 <div class="mobile-backdrop no-print" onclick="toggleMobileSidebar()"></div>
 
-<!-- الشريط الجانبي -->
 <div class="top-bar no-print" id="sidebarMenu">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; padding-bottom: 8px; border-bottom: 1px solid #ddd;">
         <span style="font-weight: bold; font-size: 13px; color: #333;">خيارات النظام</span>
@@ -528,7 +484,6 @@
     <button class="btn btn-danger" onclick="toggleMobileSidebar(); document.getElementById('clearInvoiceBtn').click();">🗑️ إعادة تحميل كل الاصناف للفاتورة</button>
 </div>
 
-<!-- أزرار حقيقية مخفية يتم تفعيلها من الشريط الجانبي أو قائمة الموبايل -->
 <div style="display:none;">
     <button id="saveAndExportBtn">حفظ وتصدير</button>
     <button id="viewInvoicesBtn">الفواتير المحفوظة</button>
@@ -595,7 +550,7 @@
                     <span class="field-label">قطعة / Block:</span>
                     <input type="text" id="blockInput" class="dotted-input">
                     <span class="field-label">شارع / Street:</span>
-                    <div id="streetInput" contenteditable="true" data-placeholder="اكتب الشارع..."></div>
+                    <div id="streetInput" contenteditable="true"></div>
                     <span class="field-label">جادة / Jeda:</span>
                     <input type="text" id="jedaInput" class="dotted-input">
                     <span class="field-label">منزل / Home:</span>
@@ -619,7 +574,8 @@
             <button type="button" class="add-row-btn no-print" id="addItemBtn">+ إضافة صنف إضافي</button>
 
             <div style="margin-top: 15px; margin-bottom: 10px; border-top: 2px dashed #000;"></div>
-            <div style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">المرتجعات / Returns</div>
+            <!-- ========== تعديل: عنوان المرتجعات بحجم أكبر وخلفية حمراء فاتحة ========== -->
+            <div style="font-weight: bold; font-size: 18.2px; margin-bottom: 8px; background: #ffcdd2; padding: 6px 12px; border-radius: 4px; display: inline-block;">المرتجعات / Returns</div>
 
             <table class="items-table returns-table" id="returnsTable">
                 <thead>
@@ -675,7 +631,10 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3>الفواتير المحفوظة</h3>
-            <button class="btn btn-danger" style="width: auto;" onclick="closeModal('savedInvoicesModal')">إغلاق ✖</button>
+            <div class="header-actions">
+                <button class="btn btn-orange" style="width: auto;" onclick="cancelLastInvoice()">🗑️ إلغاء آخر فاتورة</button>
+                <button class="btn btn-danger" style="width: auto;" onclick="closeModal('savedInvoicesModal')">إغلاق ✖</button>
+            </div>
         </div>
         <table class="saved-table">
             <thead>
@@ -833,7 +792,7 @@
     </div>
 </div>
 
-<!-- Modal إدارة العملاء الخارجيين - عرض كل البيانات -->
+<!-- Modal إدارة العملاء الخارجيين -->
 <div class="modal-overlay" id="externalCustomersModal">
     <div class="modal-content" style="max-width: 1300px;">
         <div class="modal-header">
@@ -885,14 +844,12 @@
     </div>
 </div>
 
-<!-- توقيع المطور -->
 <a href="https://yasser-q8.github.io/myprofile/#" class="signature-card" target="_blank" rel="noopener noreferrer">
     <div class="name">Yasser Elkhateeb</div>
     <div class="title">مطور البرنامج 67011143</div>
 </a>
 
 <script>
-    // دالة فتح وإغلاق قائمة الجوال الجانبية
     function toggleMobileSidebar() {
         const sidebar = document.getElementById('sidebarMenu');
         sidebar.classList.toggle('mobile-open');
@@ -929,12 +886,14 @@
     });
 
     function getExpectedNextInvoiceNumber() {
-        let savedInvoices = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+        const savedInvoices = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+        const storedLast = parseInt(localStorage.getItem('fondant_last_inv_num') || "5000");
+        let maxFromSaved = 5000;
         if (savedInvoices.length > 0) {
-            const maxNum = Math.max(...savedInvoices.map(inv => parseInt(inv.number) || 0));
-            return maxNum + 1;
+            maxFromSaved = Math.max(...savedInvoices.map(inv => parseInt(inv.number) || 0));
         }
-        return parseInt(localStorage.getItem('fondant_last_inv_num') || "5001");
+        const highest = Math.max(maxFromSaved, storedLast);
+        return highest + 1;
     }
 
     let currentInvoiceNum = getExpectedNextInvoiceNumber();
@@ -948,8 +907,8 @@
 
     function checkBackupReminder() {
         const lastBackup = localStorage.getItem('fondant_last_backup_time');
-        const twoHours = 2 * 60 * 60 * 1000;
-        if (!lastBackup || (Date.now() - parseInt(lastBackup)) > twoHours) {
+        const oneHour = 1 * 60 * 60 * 1000;
+        if (!lastBackup || (Date.now() - parseInt(lastBackup)) > oneHour) {
             document.getElementById('backupReminderBanner').style.display = 'flex';
         } else {
             document.getElementById('backupReminderBanner').style.display = 'none';
@@ -1032,28 +991,28 @@
     }
     let externalCustomersMeta = loadExternalCustomersMeta();
 
-    // ======== الأصناف الافتراضية للمستشفيات (تمت إضافة الأصناف الجديدة هنا) ========
+    // ========== تعديل: تصحيح أسماء الأصناف (الإبقاء على Croll/كرول كما هي) ==========
     const defaultItemsDB = [
         { name: "SWEET GRAHAM", price: 0.600 },
-        { name: "HALLOM CROLL SANDWITCH", price: 0.500 },
-        { name: "TURKEY CROLL SANDWITCH", price: 0.500 },
+        { name: "HALLOUM CROLL SANDWICH", price: 0.500 },
+        { name: "TURKEY CROLL SANDWICH", price: 0.500 },
         { name: "CHICKEN CROLL SANDWICH", price: 0.500 },
-        { name: "MIX FRIE SANDWICH", price: 0.500 },
+        { name: "MIX FRIED SANDWICH", price: 0.500 },
         { name: "MOHALABIYA", price: 0.500 },
-        { name: "FETA SANDWITCH", price: 0.500 },
-        { name: "HALLOM BROUN SANDWICH", price: 0.500 },
+        { name: "FETA SANDWICH", price: 0.500 },
+        { name: "HALLOUM BROWN SANDWICH", price: 0.500 },
         { name: "TURKISH BROWN SANDWICH WITH SESAME", price: 0.500 },
         { name: "BROWN CHICKEN SANDWICH WITH SESAME", price: 0.500 },
-        { name: "HALLOM SANDWICH", price: 0.500 },
-        { name: "TURKEY SANDWITCH", price: 0.500 },
+        { name: "HALLOUM SANDWICH", price: 0.500 },
+        { name: "TURKEY SANDWICH", price: 0.500 },
         { name: "CHICKEN SANDWICH", price: 0.500 },
         { name: "CHICKEN SAJ", price: 0.500 },
-        { name: "HALLOM SAJ", price: 0.500 },
-        { name: "GRAPE LEVES LIMON", price: 0.450 },
-        { name: "GRAPE LEVES ROMAN", price: 0.450 },
+        { name: "HALLOUM SAJ", price: 0.500 },
+        { name: "GRAPE LEAVES LEMON", price: 0.450 },
+        { name: "GRAPE LEAVES ROMAN", price: 0.450 },
         { name: "BROWNIES CUPS", price: 0.500 },
-        { name: "SAFRAN CAKE", price: 0.500 },
-        { name: "STRAWBERRY CHEEZ CAKE", price: 0.450 },
+        { name: "SAFFRON CAKE", price: 0.500 },
+        { name: "STRAWBERRY CHEESECAKE", price: 0.450 },
         { name: "CHOCOLATE CHEESECAKE", price: 0.450 },
         { name: "TIRAMISU CHEESECAKE", price: 0.500 },
         { name: "CHOCOLATE BOX", price: 3.500 },
@@ -1064,13 +1023,60 @@
     const defaultExternalItemsDB = [
         { name: "Kinder Croll - كرول كندر", price: 2.000 },
         { name: "Mini Mix Pies - فطاير ميني ميكس", price: 5.500 },
-        { name: "Belgian Chocolaaa - شوكولاتة بلجيكية", price: 6.750 },
-        { name: "Broken Chocolate - شوكليت مكسر", price: 7.500 },
+        { name: "Belgian Chocolate - شوكولاتة بلجيكية", price: 6.750 },
+        { name: "Broken Chocolate - شوكولاتة مكسر", price: 7.500 },
         { name: "Donut Choco Berry - دونت شوكو بيري", price: 9.500 },
-        { name: "Swiss Chocolate Box - شوكولا سويسريه", price: 9.750 },
+        { name: "Swiss Chocolate Box - شوكولا سويسرية", price: 9.750 },
         { name: "Nutella Croll - كرول نوتيلا", price: 2.000 },
-        { name: "Taco Mix Box - تاكو ميكس بوكي", price: 8.000 }
+        { name: "Taco Mix Box - تاكو ميكس بوكس", price: 8.000 }
     ];
+
+    // ==== ترحيل تلقائي للأسماء القديمة المحفوظة في localStorage ====
+    function migrateItemNames() {
+        const VERSION_KEY = 'fondant_items_version';
+        const CURRENT_VERSION = '2026-01-name-fix';
+        if (localStorage.getItem(VERSION_KEY) === CURRENT_VERSION) return;
+
+        const nameMap = {
+            'HALLOM CROLL SANDWITCH': 'HALLOUM CROLL SANDWICH',
+            'TURKEY CROLL SANDWITCH': 'TURKEY CROLL SANDWICH',
+            'MIX FRIE SANDWICH': 'MIX FRIED SANDWICH',
+            'FETA SANDWITCH': 'FETA SANDWICH',
+            'HALLOM BROUN SANDWICH': 'HALLOUM BROWN SANDWICH',
+            'HALLOM SANDWICH': 'HALLOUM SANDWICH',
+            'TURKEY SANDWITCH': 'TURKEY SANDWICH',
+            'HALLOM SAJ': 'HALLOUM SAJ',
+            'GRAPE LEVES LIMON': 'GRAPE LEAVES LEMON',
+            'GRAPE LEVES ROMAN': 'GRAPE LEAVES ROMAN',
+            'SAFRAN CAKE': 'SAFFRON CAKE',
+            'STRAWBERRY CHEEZ CAKE': 'STRAWBERRY CHEESECAKE'
+        };
+        const extMap = {
+            'Belgian Chocolaaa - شوكولاتة بلجيكية': 'Belgian Chocolate - شوكولاتة بلجيكية',
+            'Broken Chocolate - شوكليت مكسر': 'Broken Chocolate - شوكولاتة مكسر',
+            'Swiss Chocolate Box - شوكولا سويسريه': 'Swiss Chocolate Box - شوكولا سويسرية',
+            'Taco Mix Box - تاكو ميكس بوكي': 'Taco Mix Box - تاكو ميكس بوكس'
+        };
+
+        const stored = localStorage.getItem('fondant_items');
+        if (stored) {
+            try {
+                const items = JSON.parse(stored);
+                items.forEach(it => { if (nameMap[it.name]) it.name = nameMap[it.name]; });
+                localStorage.setItem('fondant_items', JSON.stringify(items));
+            } catch(e) {}
+        }
+        const storedExt = localStorage.getItem('fondant_external_items');
+        if (storedExt) {
+            try {
+                const items = JSON.parse(storedExt);
+                items.forEach(it => { if (extMap[it.name]) it.name = extMap[it.name]; });
+                localStorage.setItem('fondant_external_items', JSON.stringify(items));
+            } catch(e) {}
+        }
+        localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
+    }
+    migrateItemNames();
 
     function loadHospitalItemsDB() {
         const stored = localStorage.getItem('fondant_items');
@@ -1208,6 +1214,25 @@
         });
     }
 
+    function setupQtyInputBehavior(qtyInput, tr) {
+        qtyInput.addEventListener('focus', function() {
+            tr.classList.add('row-active');
+            const self = this;
+            setTimeout(function() {
+                try { self.setSelectionRange(0, self.value.length); }
+                catch(err) { try { self.select(); } catch(e) {} }
+            }, 0);
+        });
+        qtyInput.addEventListener('blur', () => tr.classList.remove('row-active'));
+        qtyInput.addEventListener('click', function(e) {
+            const self = this;
+            setTimeout(function() {
+                try { self.setSelectionRange(0, self.value.length); }
+                catch(err) { try { self.select(); } catch(e) {} }
+            }, 0);
+        });
+    }
+
     function createRowElement(itemData = null) {
         const rowId = Date.now() + Math.random().toString().substr(2, 4);
         const tr = document.createElement('tr');
@@ -1233,6 +1258,7 @@
         const prodList = tr.querySelector('.prod-list');
         const priceInput = tr.querySelector('.price-input');
         const qtyInput = tr.querySelector('.qty-input');
+        const qtyCell = tr.querySelector('.qty-cell');
 
         initAutocomplete(prodInput, prodList, (item) => {
             priceInput.value = item.price.toFixed(3);
@@ -1242,8 +1268,11 @@
         priceInput.addEventListener('input', () => calculateRowTotal(tr));
         qtyInput.addEventListener('input', () => calculateRowTotal(tr));
 
-        qtyInput.addEventListener('focus', () => tr.classList.add('row-active'));
-        qtyInput.addEventListener('blur', () => tr.classList.remove('row-active'));
+        qtyCell.addEventListener('click', function(e) {
+            if (e.target !== qtyInput) { e.preventDefault(); qtyInput.focus(); }
+        });
+
+        setupQtyInputBehavior(qtyInput, tr);
 
         qtyInput.addEventListener('keydown', function(e) {
             const rows = Array.from(document.querySelectorAll('#invoiceRows tr'));
@@ -1282,23 +1311,31 @@
         const prodList = tr.querySelector('.prod-list');
         initAutocomplete(prodInput, prodList, null);
 
+        // ========== تعديل: تحديد النص عند الوقوف في حقل البحث بالمرتجعات ==========
+        prodInput.addEventListener('focus', function() {
+            const self = this;
+            setTimeout(function() {
+                try { self.setSelectionRange(0, self.value.length); } catch(e) {}
+            }, 0);
+        });
+
         const returnQtyInput = tr.querySelector('.qty-input');
-        returnQtyInput.addEventListener('focus', () => tr.classList.add('row-active'));
-        returnQtyInput.addEventListener('blur', () => tr.classList.remove('row-active'));
+        const returnQtyCell = tr.querySelector('.qty-cell');
+
+        returnQtyCell.addEventListener('click', function(e) {
+            if (e.target !== returnQtyInput) { e.preventDefault(); returnQtyInput.focus(); }
+        });
+
+        setupQtyInputBehavior(returnQtyInput, tr);
 
         returnQtyInput.addEventListener('keydown', function(e) {
             if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-            e.preventDefault(); // منع زيادة/إنقاص القيمة بالسهم
+            e.preventDefault();
             const rows = Array.from(document.querySelectorAll('#returnsRows tr'));
             const currentIndex = rows.indexOf(tr);
             if (e.key === 'ArrowDown') {
-                if (currentIndex < rows.length - 1) {
-                    rows[currentIndex + 1].querySelector('.qty-input').focus();
-                } else {
-                    createReturnRowElement();
-                    const nr = Array.from(document.querySelectorAll('#returnsRows tr'));
-                    nr[nr.length - 1].querySelector('.qty-input').focus();
-                }
+                if (currentIndex < rows.length - 1) rows[currentIndex + 1].querySelector('.qty-input').focus();
+                else { createReturnRowElement(); const nr = Array.from(document.querySelectorAll('#returnsRows tr')); nr[nr.length - 1].querySelector('.qty-input').focus(); }
             } else {
                 if (currentIndex > 0) rows[currentIndex - 1].querySelector('.qty-input').focus();
             }
@@ -1487,10 +1524,7 @@
             const currentFee = parseFloat(deliveryFeeInput.value) || 0;
             if (currentFee <= 0) {
                 const proceed = confirm('⚠️ لم يتم تسجيل رسوم توصيل في الفاتورة الخارجية.\n\nاضغط "موافق" للتجاوز والمتابعة بدون رسوم،\nأو "إلغاء" للرجوع وتسجيل الرسوم.');
-                if (!proceed) {
-                    deliveryFeeInput.focus();
-                    return;
-                }
+                if (!proceed) { deliveryFeeInput.focus(); return; }
             } else {
                 deliveryFeeInput.value = currentFee.toFixed(3);
             }
@@ -1546,6 +1580,11 @@
         savedInvoices.push(newInvoiceData);
         localStorage.setItem('fondant_saved_invoices', JSON.stringify(savedInvoices));
 
+        const prevStoredLast = parseInt(localStorage.getItem('fondant_last_inv_num') || "5000");
+        if (parseInt(invNum) > prevStoredLast) {
+            localStorage.setItem('fondant_last_inv_num', invNum);
+        }
+
         if (invoiceType === 'external' && (custName || phoneVal)) {
             let existing = null;
             if (phoneVal) existing = externalCustomersMeta.find(c => c.phone === phoneVal);
@@ -1577,7 +1616,6 @@
         container.classList.add('pdf-mode');
         let hiddenRows = [];
         try {
-            // إخفاء الأصناف بدون كمية في فاتورة المستشفيات فقط قبل التصدير
             if (invoiceType === 'hospital') {
                 document.querySelectorAll('#invoiceRows tr').forEach(tr => {
                     const qtyVal = tr.querySelector('.qty-input').value.trim();
@@ -1603,7 +1641,6 @@
 
         currentInvoiceNum = getExpectedNextInvoiceNumber();
         invoiceNumberInput.value = currentInvoiceNum;
-        localStorage.setItem('fondant_last_inv_num', currentInvoiceNum);
         editingInvoiceNumber = null;
         clearFormFields();
         alert(`تم الحفظ والتصدير بنجاح! الفاتورة التالية برقم: ${currentInvoiceNum}`);
@@ -1630,7 +1667,7 @@
         }
     });
 
-    document.getElementById('viewInvoicesBtn').addEventListener('click', () => {
+    function renderSavedInvoicesList() {
         const tbody = document.getElementById('savedInvoicesList');
         const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
         tbody.innerHTML = '';
@@ -1646,8 +1683,49 @@
                 row.insertCell(5).innerHTML = `<button class="btn btn-secondary" style="padding:3px 10px;" onclick="loadSavedInvoice(${inv.number})">استدعاء</button>`;
             });
         }
+    }
+
+    document.getElementById('viewInvoicesBtn').addEventListener('click', () => {
+        renderSavedInvoicesList();
         openModal('savedInvoicesModal');
     });
+
+    // ============ تعديل: إلغاء آخر فاتورة مع إعادة الرقم للاستخدام ============
+    function cancelLastInvoice() {
+        requestPassword('أدخل كلمة المرور لإلغاء آخر فاتورة', '123321', () => {
+            const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
+            if (!saved.length) { alert('لا توجد فواتير محفوظة لإلغائها.'); return; }
+
+            const sorted = saved.slice().sort((a, b) => (parseInt(a.number) || 0) - (parseInt(b.number) || 0));
+            const lastInv = sorted[sorted.length - 1];
+
+            const msg = `هل أنت متأكد من إلغاء آخر فاتورة؟\n\n` +
+                        `رقم الفاتورة: ${lastInv.number}\n` +
+                        `النوع: ${lastInv.type === 'external' ? 'خارجية' : 'مستشفيات'}\n` +
+                        `العميل: ${lastInv.customer || '—'}\n` +
+                        `التاريخ: ${lastInv.date || '—'}\n` +
+                        `الإجمالي: ${lastInv.total}\n\n` +
+                        `⚠️ سيتم حذف هذه الفاتورة نهائياً.\n` +
+                        `سيتم إعادة الرقم ${lastInv.number} للاستخدام مرة أخرى.`;
+
+            if (!confirm(msg)) return;
+
+            const newSaved = saved.filter(inv => parseInt(inv.number) !== parseInt(lastInv.number));
+            localStorage.setItem('fondant_saved_invoices', JSON.stringify(newSaved));
+
+            // إعادة الرقم الملغي للاستخدام: storedLast = cancelled - 1
+            localStorage.setItem('fondant_last_inv_num', parseInt(lastInv.number) - 1);
+
+            // تحديث الحقل الظاهر
+            currentInvoiceNum = getExpectedNextInvoiceNumber();
+            invoiceNumberInput.value = currentInvoiceNum;
+
+            addLogEntry(`تم إلغاء آخر فاتورة رقم [ ${lastInv.number} ] للعميل ( ${lastInv.customer || '—'} ) بقيمة ${lastInv.total}. تم إعادة الرقم للاستخدام.`, false);
+            alert(`تم إلغاء الفاتورة رقم ${lastInv.number} بنجاح.\nسيتم إعادة استخدام الرقم ${lastInv.number} في الفاتورة التالية.`);
+
+            renderSavedInvoicesList();
+        });
+    }
 
     function loadSavedInvoice(invNum) {
         const saved = JSON.parse(localStorage.getItem('fondant_saved_invoices') || '[]');
@@ -2234,11 +2312,10 @@
         addLogEntry(`تم مزامنة العملاء الخارجيين من الفواتير - إجمالي: ${externalCustomersMeta.length}`, false);
     }
 
-    // ربط زر التصدير الاحتياطي بالدالة
     document.getElementById('exportBackupBtn').addEventListener('click', exportBackup);
 
     checkBackupReminder();
-    setInterval(checkBackupReminder, 60000);
+    setInterval(checkBackupReminder, 30000);
 
     updateInvoiceTypeUI();
     populateAllDefaultItems();
