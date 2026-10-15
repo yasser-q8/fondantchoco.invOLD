@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FONDANT CHOCO - نظام الفواتير</title>
+    <title>YASSER ELKHATEEB</title>
     <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/WbJw6TdV/Orig-LOGO-Square.jpg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -205,11 +205,11 @@
         }
         .items-table td input {
             width: 100%; height: 100%; border: none; outline: none;
-            background: transparent; font-size: 13px; font-weight: bold;
+            background: transparent; font-size: 15px; font-weight: bold;
             text-align: center; color: #000; font-family: Arial, sans-serif;
             box-sizing: border-box; padding: 0; line-height: normal; vertical-align: middle;
         }
-        .items-table td.prod-cell input { text-align: left; text-transform: capitalize; font-size: 12px !important; }
+        .items-table td.prod-cell input { text-align: left; text-transform: capitalize; font-size: 14.5px !important; }
 
         .items-table th:nth-child(1) { width: auto; }
         .items-table th:nth-child(2) { width: 2.35cm; }
@@ -217,10 +217,16 @@
         .items-table th:nth-child(4) { width: 1.65cm; }
         .items-table th:nth-child(5) { width: 5%; }
 
-        #invoiceRows .qty-cell input { font-size: 16px !important; }
-        #returnsRows .qty-cell input { font-size: 17px !important; }
+        #invoiceRows .qty-cell input { font-size: 19px !important; }
+        #returnsRows .qty-cell input { font-size: 20px !important; }
 
-        .row-total { font-size: 14px !important; font-weight: 900 !important; color: #000; text-align: right !important; padding-right: 8px; }
+        .row-total { font-size: 15px !important; font-weight: 900 !important; color: #000; text-align: right !important; padding-right: 8px; }
+
+        /* تمييز الصف بالكامل عند الوقوف على حقل الكمية */
+        #invoiceRows tr.row-active td,
+        #returnsRows tr.row-active td {
+            background: #fff59d !important;
+        }
 
         .add-row-btn {
             background: #17a2b8; color: white; border: none;
@@ -384,6 +390,8 @@
         .pdf-mode .dotted-input { border-bottom: 1.5px dotted #000 !important; }
         .pdf-mode #streetInput { border-bottom: 1.5px dotted #000 !important; }
         .pdf-mode .items-table td { height: 24px; padding: 2px 4px; }
+        .pdf-mode .items-table td input { font-size: 13px !important; }
+        .pdf-mode .row-total { font-size: 14px !important; }
         .pdf-mode .items-table td.prod-cell input { font-size: 13.8px !important; }
         .pdf-mode #invoiceRows .qty-cell input { font-size: 18.5px !important; }
         .pdf-mode #returnsRows .qty-cell input { font-size: 20px !important; }
@@ -392,6 +400,10 @@
         .pdf-mode .address-grid .dotted-input { font-size: 13.5px !important; }
         .pdf-mode #streetInput { font-size: 17.5px !important; }
         .pdf-mode #customerPhone { font-size: 18.7px !important; }
+        .pdf-mode #invoiceRows tr.row-active td,
+        .pdf-mode #returnsRows tr.row-active td {
+            background: #ffffff !important;
+        }
 
         .password-input {
             width: 100%; padding: 12px; font-size: 18px;
@@ -961,7 +973,9 @@
         const a = document.createElement('a');
         a.href = url;
         a.download = `Fondant_Backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         localStorage.setItem('fondant_last_backup_time', Date.now());
         checkBackupReminder();
         addLogEntry("تم تصدير نسخة احتياطية لبيانات النظام بنجاح.", false);
@@ -1018,6 +1032,7 @@
     }
     let externalCustomersMeta = loadExternalCustomersMeta();
 
+    // ======== الأصناف الافتراضية للمستشفيات (تمت إضافة الأصناف الجديدة هنا) ========
     const defaultItemsDB = [
         { name: "SWEET GRAHAM", price: 0.600 },
         { name: "HALLOM CROLL SANDWITCH", price: 0.500 },
@@ -1040,7 +1055,10 @@
         { name: "SAFRAN CAKE", price: 0.500 },
         { name: "STRAWBERRY CHEEZ CAKE", price: 0.450 },
         { name: "CHOCOLATE CHEESECAKE", price: 0.450 },
-        { name: "TIRAMISU CHEESECAKE", price: 0.500 }
+        { name: "TIRAMISU CHEESECAKE", price: 0.500 },
+        { name: "CHOCOLATE BOX", price: 3.500 },
+        { name: "KINDER CHOCOLATE", price: 3.500 },
+        { name: "VIP CHOCOLATE", price: 3.500 }
     ];
 
     const defaultExternalItemsDB = [
@@ -1224,6 +1242,9 @@
         priceInput.addEventListener('input', () => calculateRowTotal(tr));
         qtyInput.addEventListener('input', () => calculateRowTotal(tr));
 
+        qtyInput.addEventListener('focus', () => tr.classList.add('row-active'));
+        qtyInput.addEventListener('blur', () => tr.classList.remove('row-active'));
+
         qtyInput.addEventListener('keydown', function(e) {
             const rows = Array.from(document.querySelectorAll('#invoiceRows tr'));
             const currentIndex = rows.indexOf(tr);
@@ -1260,6 +1281,28 @@
         const prodInput = tr.querySelector('.prod-input');
         const prodList = tr.querySelector('.prod-list');
         initAutocomplete(prodInput, prodList, null);
+
+        const returnQtyInput = tr.querySelector('.qty-input');
+        returnQtyInput.addEventListener('focus', () => tr.classList.add('row-active'));
+        returnQtyInput.addEventListener('blur', () => tr.classList.remove('row-active'));
+
+        returnQtyInput.addEventListener('keydown', function(e) {
+            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+            e.preventDefault(); // منع زيادة/إنقاص القيمة بالسهم
+            const rows = Array.from(document.querySelectorAll('#returnsRows tr'));
+            const currentIndex = rows.indexOf(tr);
+            if (e.key === 'ArrowDown') {
+                if (currentIndex < rows.length - 1) {
+                    rows[currentIndex + 1].querySelector('.qty-input').focus();
+                } else {
+                    createReturnRowElement();
+                    const nr = Array.from(document.querySelectorAll('#returnsRows tr'));
+                    nr[nr.length - 1].querySelector('.qty-input').focus();
+                }
+            } else {
+                if (currentIndex > 0) rows[currentIndex - 1].querySelector('.qty-input').focus();
+            }
+        });
     }
 
     function calculateRowTotal(row) {
@@ -1532,7 +1575,18 @@
 
         const container = document.getElementById('invoiceContainer');
         container.classList.add('pdf-mode');
+        let hiddenRows = [];
         try {
+            // إخفاء الأصناف بدون كمية في فاتورة المستشفيات فقط قبل التصدير
+            if (invoiceType === 'hospital') {
+                document.querySelectorAll('#invoiceRows tr').forEach(tr => {
+                    const qtyVal = tr.querySelector('.qty-input').value.trim();
+                    if (qtyVal === '' || parseFloat(qtyVal) <= 0) {
+                        tr.style.display = 'none';
+                        hiddenRows.push(tr);
+                    }
+                });
+            }
             await new Promise(r => setTimeout(r, 100));
             const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
             const { jsPDF } = window.jspdf;
@@ -1542,7 +1596,10 @@
             pdf.addImage(imgData, 'JPEG', 0, 0, 210, imgHeight);
             pdf.save(`Invoice_${invNum}_${custName}.pdf`);
         } catch(err) { alert("حدث خطأ أثناء حفظ وتصدير الـ PDF"); }
-        finally { container.classList.remove('pdf-mode'); }
+        finally {
+            container.classList.remove('pdf-mode');
+            hiddenRows.forEach(tr => tr.style.display = '');
+        }
 
         currentInvoiceNum = getExpectedNextInvoiceNumber();
         invoiceNumberInput.value = currentInvoiceNum;
@@ -2176,6 +2233,9 @@
         alert(`تم التحديث! ${addedCount} عميل جديد تمت إضافته. الإجمالي: ${externalCustomersMeta.length}`);
         addLogEntry(`تم مزامنة العملاء الخارجيين من الفواتير - إجمالي: ${externalCustomersMeta.length}`, false);
     }
+
+    // ربط زر التصدير الاحتياطي بالدالة
+    document.getElementById('exportBackupBtn').addEventListener('click', exportBackup);
 
     checkBackupReminder();
     setInterval(checkBackupReminder, 60000);
